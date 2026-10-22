@@ -1,0 +1,9 @@
+﻿# SISI OPS: wajib direview Maintainer
+/Dockerfile            @kiwayway
+/docker-compose*.yml   @kiwayway
+/.env.example          @kiwayway
+/.github/              @kiwayway
+
+# SISI DEV: tambahkan username GitHub developer di sini nanti
+/app/                  @kiwayway
+/tests/                @kiwayway
