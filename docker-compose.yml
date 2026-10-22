@@ -1,0 +1,36 @@
+# Konfigurasi DEV (lokal). Versi server ada di docker-compose.prod.yml (nanti).
+services:
+  db:
+    image: postgres:16
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: nineteen
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      POSTGRES_DB: nineteen_db
+    ports:
+      - "127.0.0.1:5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U nineteen -d nineteen_db"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  web:
+    build: .
+    restart: unless-stopped
+    command: gunicorn --reload -b 0.0.0.0:5000 wsgi:app
+    env_file: .env
+    environment:
+      DATABASE_URL: postgresql+psycopg2://nineteen:${DB_PASSWORD}@db:5432/nineteen_db
+    depends_on:
+      db:
+        condition: service_healthy
+    ports:
+      - "127.0.0.1:5000:5000"
+    volumes:
+      - .:/app
+
+volumes:
+  pgdata:
