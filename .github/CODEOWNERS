@@ -1,0 +1,9 @@
+﻿# SISI OPS: infrastruktur dan konfigurasi, direview tim Ops
+/Dockerfile            @Farris10 @moseshendika @Uzzayri
+/docker-compose*.yml   @Farris10 @moseshendika @Uzzayri
+/.env.example          @Farris10 @moseshendika @Uzzayri
+/.github/              @Farris10 @moseshendika @Uzzayri
+
+# SISI DEV: kode aplikasi dan test, direview tim Dev
+/app/                  @kiwayway @Haikal-ai-tech
+/tests/                @kiwayway @Haikal-ai-tech
