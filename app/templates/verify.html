@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Verifikasi - Fasco</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<script>
+tailwind.config={theme:{extend:{fontFamily:{sans:['"Plus Jakarta Sans"','system-ui','sans-serif']},colors:{brand:{DEFAULT:'#2F7BF5',dark:'#1F5FD0',soft:'#EAF3FF'},sun:'#FFC933',ink:'#1B2A4A'}}}}
+</script>
+</head>
+<body class="min-h-screen bg-slate-50 font-sans text-ink flex items-center justify-center p-4">
+<main class="w-full max-w-5xl bg-white rounded-2xl shadow-xl shadow-blue-900/5 overflow-hidden relative">
+  <header class="absolute inset-x-0 top-0 z-10 flex items-center justify-between px-6 py-4 text-xs">
+    <a href="login.html" class="flex items-center gap-2 font-extrabold text-ink text-base">
+     <img src="{{ url_for('static', filename='assets/Mask group.png') }}" alt="" width="100"></a>
+    <a href="register.html" class="font-semibold text-brand">&larr; Kembali</a>
+  </header>
+  <div class="grid md:grid-cols-2 min-h-[600px]">
+    <!-- Panel kiri -->
+    <section class="relative overflow-hidden bg-gradient-to-br from-brand-soft to-white px-8 pt-24 pb-8 md:px-10 flex flex-col">
+      
+      <div class="absolute right-0 top-16 w-24 h-24 bg-sun rounded-full opacity-80"></div>
+     
+      <div class="relative z-10">
+        <h1 class="text-3xl md:text-4xl font-extrabold leading-tight text-brand-dark">Hampir selesai!</h1>
+        <p class="mt-3 text-sm text-slate-600 max-w-xs">Kami sudah mengirimkan kode verifikasi ke email kamu.</p>
+      </div>
+      <!-- Maskot: ganti dengan <img src="maskot.png"> jika sudah punya aset -->
+      <div class="relative z-10 mt-auto mx-auto pt-6">
+        <img src="{{ url_for('static', filename='assets/verify.png') }}" alt="">
+      </div>
+    </section>
+    <!-- Panel kanan -->
+    <section class="px-8 md:px-12 py-24 flex flex-col justify-center">
+      <div class="w-full max-w-sm mx-auto">
+<h2 class="text-xl font-bold">Konfirmasi kode</h2><p class="text-sm text-slate-500 mb-6">Masukkan kode 6 digit yang telah dikirim ke email kamu.</p>
+<form id="otp-form" onsubmit="event.preventDefault();alert('Kode terverifikasi (demo)')">
+<div class="flex justify-between gap-2 mb-6"><input inputmode="numeric" maxlength="1" aria-label="Digit 1" class="otp w-11 h-12 text-center text-lg font-semibold rounded-lg border border-slate-200 focus:outline-none focus:ring-2 focus:ring-brand/40 focus:border-brand"><input inputmode="numeric" maxlength="1" aria-label="Digit 2" class="otp w-11 h-12 text-center text-lg font-semibold rounded-lg border border-slate-200 focus:outline-none focus:ring-2 focus:ring-brand/40 focus:border-brand"><input inputmode="numeric" maxlength="1" aria-label="Digit 3" class="otp w-11 h-12 text-center text-lg font-semibold rounded-lg border border-slate-200 focus:outline-none focus:ring-2 focus:ring-brand/40 focus:border-brand"><input inputmode="numeric" maxlength="1" aria-label="Digit 4" class="otp w-11 h-12 text-center text-lg font-semibold rounded-lg border border-slate-200 focus:outline-none focus:ring-2 focus:ring-brand/40 focus:border-brand"><input inputmode="numeric" maxlength="1" aria-label="Digit 5" class="otp w-11 h-12 text-center text-lg font-semibold rounded-lg border border-slate-200 focus:outline-none focus:ring-2 focus:ring-brand/40 focus:border-brand"><input inputmode="numeric" maxlength="1" aria-label="Digit 6" class="otp w-11 h-12 text-center text-lg font-semibold rounded-lg border border-slate-200 focus:outline-none focus:ring-2 focus:ring-brand/40 focus:border-brand"></div>
+<button type="submit" class="w-full rounded-lg bg-brand hover:bg-brand-dark text-white text-sm font-semibold py-2.5 transition focus:outline-none focus:ring-2 focus:ring-brand/40 focus:ring-offset-2">Verifikasi</button></form>
+<p class="text-xs text-center text-slate-500 mt-5">Tidak menerima kode? <button id="resend" disabled class="font-semibold text-brand disabled:text-slate-400">Kirim ulang (<span id="t">00:59</span>)</button></p>      </div>
+    </section>
+  </div>
+</main>
+<script>
+const o=[...document.querySelectorAll('.otp')];
+o.forEach((e,i)=>{e.addEventListener('input',()=>{e.value=e.value.replace(/\D/g,'');if(e.value&&o[i+1])o[i+1].focus();});
+e.addEventListener('keydown',k=>{if(k.key==='Backspace'&&!e.value&&o[i-1])o[i-1].focus();});
+e.addEventListener('paste',p=>{const d=(p.clipboardData.getData('text')||'').replace(/\D/g,'').slice(0,6);if(!d)return;p.preventDefault();[...d].forEach((c,j)=>o[j].value=c);o[Math.min(d.length,5)].focus();});});
+let s=59;const t=document.getElementById('t'),r=document.getElementById('resend');
+function tick(){t.textContent='00:'+String(s).padStart(2,'0');if(s--<=0){clearInterval(iv);r.disabled=false;r.textContent='Kirim ulang';}}
+let iv=setInterval(tick,1000);
+r.addEventListener('click',()=>{s=59;r.disabled=true;r.innerHTML='Kirim ulang (<span id="t">00:59</span>)';location.reload();});
+</script>
+</body>
+</html>
