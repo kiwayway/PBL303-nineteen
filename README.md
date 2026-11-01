@@ -40,7 +40,26 @@ python -m pytest -v         # jalankan test lokal
 Halaman: `/register`, `/verify` (OTP email), `/login`, `/forgot-password`, `/reset-password`, `POST /logout`.
 - Migrasi database jalan otomatis saat `docker compose up` (`flask db upgrade`).
 - Saat dev (`MAIL_SERVER` kosong), kode OTP dicetak di log: `docker compose logs web`.
-- Tombol "Masuk dengan Google" masih nonaktif (belum diimplementasikan).
+- Daftar/masuk dengan Google: lihat bagian "Login dengan Google" di bawah. Tombol otomatis nonaktif jika `GOOGLE_CLIENT_ID`/`GOOGLE_CLIENT_SECRET` kosong.
+
+## Login dengan Google
+Route: `GET /auth/google` (mulai) dan `GET /auth/google/callback`. Alur OpenID Connect Authorization Code + PKCE, dengan `state` dan `nonce` sekali pakai di sesi. Tanda tangan ID token (RS256) diverifikasi dengan kunci publik Google (PyJWT + JWKS); algoritma lain ditolak. Panduan dev/staging/produksi, rotasi secret, dan uji manual: [`docs/GOOGLE-OAUTH.md`](docs/GOOGLE-OAUTH.md).
+
+**Setup (sekali):**
+1. Google Cloud Console -> APIs & Services -> OAuth consent screen, lalu Credentials -> Create OAuth client ID -> *Web application*.
+2. Authorized redirect URI (harus sama persis): `http://localhost:5000/auth/google/callback` untuk dev (pakai `localhost`, bukan `127.0.0.1`); URL `https://` domain produksi untuk server.
+3. Isi `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, `GOOGLE_REDIRECT_URI` di `.env` (nama variabel ada di `.env.example`). Jangan commit nilainya.
+4. `docker compose up --build` (migrasi `0003` jalan otomatis).
+
+**Aturan akun:**
+- Identitas disimpan di tabel `oauth_identities` berdasarkan `(provider, sub)`, bukan email.
+- Email Google harus `email_verified`; jika tidak, ditolak.
+- Pengguna baru -> role `customer`, `is_verified=True`, `phone` kosong (kolom `phone` kini boleh NULL; tetap unik jika terisi). Password diisi hash acak yang tak diketahui siapa pun; akun Google bisa membuat password lewat "Lupa password".
+- Email sudah dipakai akun lokal **terverifikasi** -> akun itu dihubungkan (role/data tidak berubah). Jika akun lokalnya **belum terverifikasi**, password lamanya dibuang lalu dihubungkan (mencegah pra-pembajakan email).
+- Jika akun itu sudah terhubung ke identitas Google **lain** (sub berbeda, email sama), login ditolak (`identity_conflict`); akun tidak pernah digabung hanya karena email sama.
+- Akun nonaktif ditolak. Role tidak pernah ditentukan dari request.
+- Event audit: `google_start`, `google_register`, `google_link`, `google_login`, `google_conflict`, `google_failed` (dengan `reason`). Token, code, dan secret tidak pernah dicatat.
+- Jika di belakang reverse proxy/HTTPS, set `GOOGLE_REDIRECT_URI` eksplisit dan `COOKIE_SECURE=1`.
 
 ## Konfigurasi Keamanan
 - `SECRET_KEY` wajib diisi (minimal 32 karakter) dan aplikasi menolak start jika kosong atau masih nilai contoh. Buat dengan:
