@@ -41,3 +41,12 @@ Halaman: `/register`, `/verify` (OTP email), `/login`, `/forgot-password`, `/res
 - Migrasi database jalan otomatis saat `docker compose up` (`flask db upgrade`).
 - Saat dev (`MAIL_SERVER` kosong), kode OTP dicetak di log: `docker compose logs web`.
 - Tombol "Masuk dengan Google" masih nonaktif (belum diimplementasikan).
+
+## Konfigurasi Keamanan
+- `SECRET_KEY` wajib diisi (minimal 32 karakter) dan aplikasi menolak start jika kosong atau masih nilai contoh. Buat dengan:
+  `python -c "import secrets; print(secrets.token_urlsafe(48))"`
+- `DATABASE_URL` wajib diisi di luar mode test (docker compose sudah mengaturnya).
+- Login dibatasi: 5 gagal per akun dan 20 gagal per IP dalam 15 menit, lalu diblokir sementara (HTTP 429). Bisa diubah lewat `LOGIN_MAX_FAILS_PER_ACCOUNT`, `LOGIN_MAX_FAILS_PER_IP`, `LOGIN_WINDOW_SECONDS`. Pembatas ini disimpan di memori per proses (cukup untuk 1 worker gunicorn).
+- Setelah situs diakses lewat HTTPS, set `COOKIE_SECURE=1` di `.env` agar cookie sesi hanya dikirim lewat HTTPS.
+- Log keamanan (logger `fasco.audit`) ditulis ke stderr dengan format `event="login_failed" ip="..." ident="..."`. Event: `register`, `otp_failed`, `otp_ok`, `login_success`, `login_failed`, `login_blocked`, `password_reset_requested`, `password_reset`. Dibaca Wazuh agent lewat `docker logs`/file log. Password dan kode OTP tidak pernah dicatat.
+- Jika berada di belakang reverse proxy (nginx), alamat IP klien perlu diteruskan dengan `ProxyFix`; tambahkan saat nginx dipasang.

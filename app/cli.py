@@ -1,4 +1,4 @@
-﻿import re
+import re
 
 import click
 from sqlalchemy import or_
