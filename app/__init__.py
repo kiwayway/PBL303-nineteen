@@ -56,6 +56,10 @@ def create_app(test_config=None):
         LOGIN_MAX_FAILS_PER_ACCOUNT=int(os.environ.get("LOGIN_MAX_FAILS_PER_ACCOUNT", "5")),
         LOGIN_MAX_FAILS_PER_IP=int(os.environ.get("LOGIN_MAX_FAILS_PER_IP", "20")),
         LOGIN_WINDOW_SECONDS=int(os.environ.get("LOGIN_WINDOW_SECONDS", "900")),
+        # Login Google (kosongkan CLIENT_ID/SECRET untuk menonaktifkan tombolnya)
+        GOOGLE_CLIENT_ID=os.environ.get("GOOGLE_CLIENT_ID", ""),
+        GOOGLE_CLIENT_SECRET=os.environ.get("GOOGLE_CLIENT_SECRET", ""),
+        GOOGLE_REDIRECT_URI=os.environ.get("GOOGLE_REDIRECT_URI", ""),
         MAIL_SERVER=os.environ.get("MAIL_SERVER", ""),
         MAIL_PORT=int(os.environ.get("MAIL_PORT", "587")),
         MAIL_USE_TLS=os.environ.get("MAIL_USE_TLS", "true").lower()
@@ -84,6 +88,7 @@ def create_app(test_config=None):
 
     from . import models  # noqa: F401
     from .auth import bp as auth_bp
+    from .auth.google import google_enabled
     from .auth.routes import csrf_token
     from .catalog import bp as catalog_bp
     from .main import bp as main_bp
@@ -92,6 +97,7 @@ def create_app(test_config=None):
     app.register_blueprint(auth_bp)
     app.register_blueprint(catalog_bp)
     app.jinja_env.globals["csrf_token"] = csrf_token
+    app.jinja_env.globals["google_enabled"] = google_enabled
 
     @app.after_request
     def _security_headers(resp):

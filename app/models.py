@@ -30,7 +30,8 @@ class User(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(120), nullable=False)
     email = db.Column(db.String(254), unique=True, nullable=False, index=True)
-    phone = db.Column(db.String(20), unique=True, nullable=False, index=True)
+    # NULL untuk akun yang dibuat lewat Google (belum mengisi nomor HP); unik bila terisi
+    phone = db.Column(db.String(20), unique=True, nullable=True, index=True)
     password_hash = db.Column(db.String(256), nullable=False)
     is_verified = db.Column(db.Boolean, nullable=False, default=False)
     created_at = db.Column(db.DateTime(timezone=True), nullable=False, default=utcnow)
@@ -84,6 +85,30 @@ class User(db.Model):
             and r is not None
             and r >= TOP_SELLER_MIN_RATING
         )
+
+
+class OAuthIdentity(db.Model):
+    """Identitas penyedia login eksternal (Google). Dikunci ke (provider, subject)
+    -- `subject` adalah `sub` yang stabil, bukan email yang bisa berubah."""
+
+    __tablename__ = "oauth_identities"
+    __table_args__ = (
+        db.UniqueConstraint("provider", "subject", name="uq_oauth_provider_subject"),
+        db.UniqueConstraint("user_id", "provider", name="uq_oauth_user_provider"),
+    )
+
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(
+        db.Integer, db.ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True
+    )
+    provider = db.Column(db.String(20), nullable=False)
+    subject = db.Column(db.String(255), nullable=False)
+    email = db.Column(db.String(254), nullable=False)  # email saat terhubung (informasi saja)
+    created_at = db.Column(db.DateTime(timezone=True), nullable=False, default=utcnow)
+
+    user = db.relationship(
+        "User", backref=db.backref("oauth_identities", cascade="all, delete-orphan")
+    )
 
 
 class OtpCode(db.Model):
