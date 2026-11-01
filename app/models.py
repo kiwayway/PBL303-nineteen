@@ -1,4 +1,4 @@
-﻿from datetime import datetime, timedelta, timezone
+from datetime import datetime, timedelta, timezone
 
 from sqlalchemy import func
 from werkzeug.security import check_password_hash, generate_password_hash

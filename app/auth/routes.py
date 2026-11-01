@@ -3,11 +3,12 @@ import secrets
 from functools import wraps
 
 from flask import (
-    Blueprint, abort, flash, redirect, render_template, request, session, url_for,
+    Blueprint, abort, current_app, flash, redirect, render_template, request, session, url_for,
 )
 from sqlalchemy import or_
 from werkzeug.security import check_password_hash, generate_password_hash
 
+from ..auditlog import audit
 from ..extensions import db
 from ..mailer import send_otp_email
 from ..models import OtpCode, User, utcnow
@@ -48,6 +49,29 @@ def current_user():
     uid = session.get("user_id")
     user = db.session.get(User, uid) if uid else None
     return user if user and user.is_active else None
+
+
+def client_ip():
+    return request.remote_addr or "unknown"
+
+
+def _login_keys(ident):
+    key = ident.lower() if "@" in ident else normalize_phone(ident)
+    return f"acct:{key}", f"ip:{client_ip()}"
+
+
+def login_retry_after(ident):
+    acct_key, ip_key = _login_keys(ident)
+    ext = current_app.extensions
+    return max(ext["login_limiter_account"].retry_after(acct_key),
+               ext["login_limiter_ip"].retry_after(ip_key))
+
+
+def login_record_failure(ident):
+    acct_key, ip_key = _login_keys(ident)
+    ext = current_app.extensions
+    ext["login_limiter_account"].record(acct_key)
+    ext["login_limiter_ip"].record(ip_key)
 
 
 def login_required(view):
@@ -146,6 +170,7 @@ def register():
         user.set_password(password)
         db.session.commit()
 
+        audit("register", ip=client_ip(), user_id=user.id)
         issue_otp(user, OtpCode.PURPOSE_VERIFY)
         session["pending_user_id"] = user.id
         session["pending_purpose"] = OtpCode.PURPOSE_VERIFY
@@ -171,11 +196,13 @@ def verify():
             return render_template("auth/verify.html", email=email, back=back), 400
         ok, err = check_otp(user.id, purpose, code) if user else (False, "Kode salah.")
         if not ok:
+            audit("otp_failed", ip=client_ip(), purpose=purpose, user_id=user.id if user else None)
             flash(err, "error")
             return render_template("auth/verify.html", email=email, back=back), 400
 
         session.pop("pending_user_id", None)
         session.pop("pending_purpose", None)
+        audit("otp_ok", ip=client_ip(), purpose=purpose, user_id=user.id)
         if purpose == OtpCode.PURPOSE_VERIFY:
             user.is_verified = True
             db.session.commit()
@@ -192,9 +219,12 @@ def verify():
 def resend():
     uid, purpose = session.get("pending_user_id"), session.get("pending_purpose")
     user = db.session.get(User, uid) if uid else None
-    if not user:  # sesi tidak valid atau email tak terdaftar: tampilkan respons yang sama
-        flash("Kode baru sudah dikirim.", "success") if session.get("pending_email") else None
-        return redirect(url_for("auth.verify" if session.get("pending_email") else "auth.login"))
+    if not user:
+        # sesi tidak valid, atau email tak terdaftar (alur reset): respons dibuat sama
+        if session.get("pending_email"):
+            flash("Kode baru sudah dikirim.", "success")
+            return redirect(url_for("auth.verify"))
+        return redirect(url_for("auth.login"))
     if seconds_since_last_otp(user.id, purpose) < RESEND_COOLDOWN_SECONDS:
         flash("Tunggu sebentar sebelum meminta kode baru.", "error")
     else:
@@ -211,16 +241,27 @@ def login():
     if request.method == "POST":
         ident = request.form.get("identifier", "").strip()
         password = request.form.get("password", "")
+
+        wait = login_retry_after(ident)
+        if wait:
+            audit("login_blocked", ip=client_ip(), ident=ident, retry_after=wait)
+            flash(f"Terlalu banyak percobaan gagal. Coba lagi dalam {-(-wait // 60)} menit.", "error")
+            return render_template("auth/login.html", form=request.form), 429
+
         if "@" in ident:
             user = User.query.filter_by(email=ident.lower()).first()
         else:
             user = User.query.filter_by(phone=normalize_phone(ident)).first()
 
         if not user or not user.check_password(password):
+            login_record_failure(ident)
+            audit("login_failed", ip=client_ip(), ident=ident,
+                  reason="unknown_user" if not user else "bad_password")
             flash("Email/nomor HP atau password salah.", "error")
             return render_template("auth/login.html", form=request.form), 401
 
         if not user.is_active:
+            audit("login_failed", ip=client_ip(), ident=ident, reason="inactive", user_id=user.id)
             flash("Akun dinonaktifkan. Hubungi admin.", "error")
             return render_template("auth/login.html", form=request.form), 403
 
@@ -232,6 +273,8 @@ def login():
             return redirect(url_for("auth.verify"))
 
         remember = bool(request.form.get("remember"))
+        current_app.extensions["login_limiter_account"].reset(_login_keys(ident)[0])
+        audit("login_success", ip=client_ip(), ident=ident, user_id=user.id)
         session.clear()
         session["user_id"] = user.id
         session.permanent = remember
@@ -251,6 +294,7 @@ def forgot_password():
     if request.method == "POST":
         email = request.form.get("email", "").strip().lower()
         user = User.query.filter_by(email=email, is_verified=True).first()
+        audit("password_reset_requested", ip=client_ip(), email=email, known=bool(user))
         session.pop("pending_user_id", None)
         session["pending_purpose"] = OtpCode.PURPOSE_RESET
         session["pending_email"] = email
@@ -277,6 +321,7 @@ def reset_password():
         else:
             user.set_password(pw)
             db.session.commit()
+            audit("password_reset", ip=client_ip(), user_id=user.id)
             session.clear()
             flash("Password berhasil diubah. Silakan masuk.", "success")
             return redirect(url_for("auth.login"))
