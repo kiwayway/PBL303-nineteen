@@ -81,10 +81,12 @@ def create_app(test_config=None):
     from . import models  # noqa: F401
     from .auth import bp as auth_bp
     from .auth.routes import csrf_token
+    from .catalog import bp as catalog_bp
     from .main import bp as main_bp
 
     app.register_blueprint(main_bp)
     app.register_blueprint(auth_bp)
+    app.register_blueprint(catalog_bp)
     app.jinja_env.globals["csrf_token"] = csrf_token
 
     @app.after_request
