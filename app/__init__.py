@@ -17,8 +17,8 @@ def _env_bool(name, default="0"):
 
 
 def _setup_logging(app):
-    """Log keamanan (fasco.audit) ke stderr agar terbaca docker logs dan Wazuh."""
-    logger = logging.getLogger("fasco")
+    """Log keamanan (nineteen.audit) ke stderr agar terbaca docker logs dan Wazuh."""
+    logger = logging.getLogger("nineteen")
     logger.setLevel(logging.INFO)
     if not logger.handlers:
         handler = logging.StreamHandler(sys.stderr)

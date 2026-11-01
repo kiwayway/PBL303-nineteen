@@ -3,14 +3,14 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Fasco</title>
+<title>Nineteen</title>
 <script src="https://cdn.tailwindcss.com"></script>
 <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <script>tailwind.config={theme:{extend:{fontFamily:{sans:['"Plus Jakarta Sans"','system-ui','sans-serif']},colors:{brand:{DEFAULT:'#2F7BF5',dark:'#1F5FD0',soft:'#EAF3FF'},ink:'#1B2A4A'}}}}</script>
 </head>
 <body class="min-h-screen bg-slate-50 font-sans text-ink">
 <header class="flex items-center justify-between px-6 py-4 bg-white shadow-sm">
-  <img src="{{ url_for('static', filename='img/logo.png') }}" width="90" alt="Fasco">
+  <img src="{{ url_for('static', filename='img/logo.png') }}" width="90" alt="Nineteen">
   {% if user %}
   <form method="post" action="{{ url_for('auth.logout') }}" class="flex items-center gap-3 text-sm">
     <input type="hidden" name="_csrf" value="{{ csrf_token() }}">
