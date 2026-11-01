@@ -37,6 +37,10 @@ def create_app(test_config=None):
     app.register_blueprint(auth_bp)
     app.jinja_env.globals["csrf_token"] = csrf_token
 
+    from .cli import register_cli
+
+    register_cli(app)
+
     if app.config.get("TESTING"):
         with app.app_context():
             db.create_all()

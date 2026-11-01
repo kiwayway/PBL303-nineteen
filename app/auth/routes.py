@@ -46,7 +46,8 @@ def normalize_phone(raw):
 
 def current_user():
     uid = session.get("user_id")
-    return db.session.get(User, uid) if uid else None
+    user = db.session.get(User, uid) if uid else None
+    return user if user and user.is_active else None
 
 
 def login_required(view):
@@ -218,6 +219,10 @@ def login():
         if not user or not user.check_password(password):
             flash("Email/nomor HP atau password salah.", "error")
             return render_template("auth/login.html", form=request.form), 401
+
+        if not user.is_active:
+            flash("Akun dinonaktifkan. Hubungi admin.", "error")
+            return render_template("auth/login.html", form=request.form), 403
 
         if not user.is_verified:
             issue_otp(user, OtpCode.PURPOSE_VERIFY)
