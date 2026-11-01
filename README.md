@@ -34,3 +34,10 @@ python -m pytest -v         # jalankan test lokal
 - PR harus 1 approval dan CI hijau.
 - Jangan commit `.env` atau rahasia apa pun.
 - Pesan commit pakai awalan: `feat:`, `fix:`, `ops:`, `chore:`, `docs:`.
+
+
+## Fitur Autentikasi
+Halaman: `/register`, `/verify` (OTP email), `/login`, `/forgot-password`, `/reset-password`, `POST /logout`.
+- Migrasi database jalan otomatis saat `docker compose up` (`flask db upgrade`).
+- Saat dev (`MAIL_SERVER` kosong), kode OTP dicetak di log: `docker compose logs web`.
+- Tombol "Masuk dengan Google" masih nonaktif (belum diimplementasikan).
