@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>{% block title %}Fasco{% endblock %} - Fasco</title>
+<title>{% block title %}Nineteen{% endblock %} - Nineteen</title>
 <script src="https://cdn.tailwindcss.com"></script>
 <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <script>
@@ -13,7 +13,7 @@ tailwind.config={theme:{extend:{fontFamily:{sans:['"Plus Jakarta Sans"','system-
 <body class="min-h-screen bg-slate-50 font-sans text-ink flex items-center justify-center p-4">
 <main class="w-full max-w-5xl bg-white rounded-2xl shadow-xl shadow-blue-900/5 overflow-hidden relative">
   <header class="absolute inset-x-0 top-0 z-10 flex items-center justify-between px-6 py-4 text-xs">
-    <a href="{{ url_for('main.index') }}"><img src="{{ url_for('static', filename='img/logo.png') }}" width="90" alt="Fasco"></a>
+    <a href="{{ url_for('main.index') }}"><img src="{{ url_for('static', filename='img/logo.png') }}" width="90" alt="Nineteen"></a>
     {% block header_right %}{% endblock %}
   </header>
   <div class="grid md:grid-cols-2 min-h-[600px]">

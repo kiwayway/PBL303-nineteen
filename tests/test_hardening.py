@@ -79,23 +79,23 @@ def test_pemblokiran_per_akun_tidak_kena_akun_lain(client):
 def test_audit_log_tidak_memuat_password(client, caplog):
     register_and_verify(client)
     post(client, "/logout", {}, page="/")
-    with caplog.at_level(logging.INFO, logger="fasco.audit"):
+    with caplog.at_level(logging.INFO, logger="nineteen.audit"):
         # propagate dimatikan di app; pasang handler caplog langsung
-        logging.getLogger("fasco.audit").addHandler(caplog.handler)
+        logging.getLogger("nineteen.audit").addHandler(caplog.handler)
         try:
             bad_login(client)
         finally:
-            logging.getLogger("fasco.audit").removeHandler(caplog.handler)
+            logging.getLogger("nineteen.audit").removeHandler(caplog.handler)
     text = caplog.text
     assert 'event="login_failed"' in text and 'ident="budi@mail.com"' in text
     assert "salah-banget" not in text
 
 
 def test_audit_log_aman_dari_log_injection(client, caplog):
-    logger = logging.getLogger("fasco.audit")
+    logger = logging.getLogger("nineteen.audit")
     logger.addHandler(caplog.handler)
     try:
-        with caplog.at_level(logging.INFO, logger="fasco.audit"):
+        with caplog.at_level(logging.INFO, logger="nineteen.audit"):
             post(client, "/login", {"identifier": "a@b.c\nevent=\"login_success\"", "password": "x"},
                  page="/login")
     finally:

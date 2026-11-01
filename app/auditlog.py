@@ -7,7 +7,7 @@ Jangan pernah mencatat password, kode OTP, atau token.
 import json
 import logging
 
-_log = logging.getLogger("fasco.audit")
+_log = logging.getLogger("nineteen.audit")
 
 
 def audit(event, **fields):
