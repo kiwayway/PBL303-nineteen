@@ -1,35 +1,80 @@
 import logging
 import smtplib
 from email.message import EmailMessage
-
+from email.utils import formataddr
 from flask import current_app
 
 log = logging.getLogger(__name__)
 
 
 def send_otp_email(to_email, code, purpose):
-    """Kirim kode OTP. Jika MAIL_SERVER kosong (dev), kode dicetak ke log."""
-    subject = "Kode verifikasi Fasco" if purpose == "verify" else "Kode reset password Fasco"
+    """Kirim kode OTP melalui SMTP."""
+
+    if purpose == "verify":
+        subject = "Kode Verifikasi Akun — Nineteen"
+        intro = (
+            "Terima kasih telah mendaftar di Nineteen!\n"
+            "Gunakan kode berikut untuk memverifikasi akun kamu."
+        )
+    else:
+        subject = "Reset Password — Nineteen"
+        intro = (
+            "Kami menerima permintaan untuk mereset password akun Nineteen kamu.\n"
+            "Gunakan kode berikut untuk melanjutkan proses reset password."
+        )
+
     body = (
-        f"Kode kamu: {code}\n\n"
-        "Kode berlaku 10 menit. Jangan bagikan kode ini kepada siapa pun."
+        f"Halo!\n\n"
+        f"{intro}\n\n"
+        f"Kode OTP kamu: {code}\n\n"
+        "Kode ini berlaku selama 10 menit.\n"
+        "Jangan bagikan kode ini kepada siapa pun.\n\n"
+        "Jika kamu tidak melakukan permintaan ini, abaikan email ini.\n\n"
+        "Salam hangat,\n"
+        "Tim Nineteen"
     )
+
     cfg = current_app.config
+
     if not cfg.get("MAIL_SERVER"):
-        log.warning("[DEV] MAIL_SERVER kosong. Kode %s untuk %s: %s", purpose, to_email, code)
+        log.warning(
+            "[DEV] MAIL_SERVER kosong. Kode %s untuk %s: %s",
+            purpose,
+            to_email,
+            code,
+        )
         return
+
+    sender_email = cfg.get("MAIL_USERNAME")
+    if not sender_email:
+        log.error("MAIL_USERNAME belum dikonfigurasi.")
+        raise RuntimeError("Konfigurasi email pengirim belum lengkap.")
 
     msg = EmailMessage()
     msg["Subject"] = subject
-    msg["From"] = cfg["MAIL_FROM"]
+    msg["From"] = formataddr(("Nineteen", sender_email))
     msg["To"] = to_email
     msg.set_content(body)
+
     try:
-        with smtplib.SMTP(cfg["MAIL_SERVER"], cfg["MAIL_PORT"], timeout=10) as s:
-            if cfg["MAIL_USE_TLS"]:
-                s.starttls()
-            if cfg.get("MAIL_USERNAME"):
-                s.login(cfg["MAIL_USERNAME"], cfg["MAIL_PASSWORD"])
-            s.send_message(msg)
+        with smtplib.SMTP(
+            cfg["MAIL_SERVER"],
+            cfg.get("MAIL_PORT", 587),
+            timeout=20,
+        ) as server:
+            server.ehlo()
+
+            if cfg.get("MAIL_USE_TLS", True):
+                server.starttls()
+                server.ehlo()
+
+            server.login(
+                sender_email,
+                cfg["MAIL_PASSWORD"],
+            )
+
+            server.send_message(msg)
+
     except Exception:
-        log.exception("Gagal mengirim email ke %s", to_email)
+        log.exception("Gagal mengirim email OTP.")
+        raise
