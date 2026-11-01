@@ -218,3 +218,56 @@ __marimo__/
 
 # Streamlit
 .streamlit/secrets.toml
+
+# ===== Proyek PBL303-nineteen =====
+
+# Rahasia: .env boleh, contohnya tetap di-commit
+.env.*
+!.env.example
+
+# Dump dan backup database (berisi data asli dan hash password)
+*.dump
+*.sql
+*.sql.gz
+*.bak
+backups/
+pgdata/
+
+# Kunci, sertifikat, dan kredensial (HTTPS, VPN, SSH, Wazuh, OPNsense)
+*.pem
+*.key
+*.crt
+*.csr
+*.pfx
+*.p12
+*.ovpn
+id_rsa*
+id_ed25519*
+wazuh-install-files.tar
+config-*.xml
+*.kdbx
+
+# Berkas unggahan pengguna (gambar jasa, avatar) - bukan aset statis
+app/static/uploads/
+uploads/
+
+# File VM dan hypervisor (sangat besar)
+*.vdi
+*.vmdk
+*.vhd
+*.vhdx
+*.iso
+*.ova
+*.ovf
+*.qcow2
+*.vbox-prev
+.vagrant/
+
+# Editor dan OS
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+desktop.ini
+*.swp
+*~
