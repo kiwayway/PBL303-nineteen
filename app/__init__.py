@@ -26,6 +26,12 @@ def _setup_logging(app):
         logger.addHandler(handler)
     logger.propagate = False
 
+def rupiah(value):
+    """500000 -> 'Rp500.000'"""
+    if value is None:
+        return "-"
+    return "Rp" + f"{int(value):,}".replace(",", ".")
+
 
 def create_app(test_config=None):
     testing = bool(test_config and test_config.get("TESTING"))
@@ -88,6 +94,7 @@ def create_app(test_config=None):
     app.register_blueprint(auth_bp)
     app.register_blueprint(catalog_bp)
     app.jinja_env.globals["csrf_token"] = csrf_token
+    app.jinja_env.filters["rupiah"] = rupiah
 
     @app.after_request
     def _security_headers(resp):

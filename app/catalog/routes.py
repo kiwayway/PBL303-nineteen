@@ -1,5 +1,6 @@
-from flask import Blueprint
+from flask import Blueprint, render_template
 
+from ..auth.routes import current_user
 from ..models import Service
 
 bp = Blueprint("catalog", __name__)
@@ -8,4 +9,4 @@ bp = Blueprint("catalog", __name__)
 @bp.route("/jasa")
 def list_services():
     services = Service.query.all()
-    return ", ".join(s.title for s in services) or "Belum ada jasa"
+    return render_template("catalog/list.html", services=services, user=current_user())

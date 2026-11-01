@@ -1,0 +1,21 @@
+{% extends "_layout.html" %}
+{% block title %}Katalog Jasa{% endblock %}
+{% block content %}
+<h1 class="text-2xl font-extrabold">Katalog Jasa</h1>
+
+{% if services %}
+<div class="mt-6 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+  {% for s in services %}
+  <div class="rounded-2xl bg-white p-5 shadow-sm ring-1 ring-slate-100">
+    <span class="text-xs font-semibold uppercase text-brand">{{ s.category.name }}</span>
+    <h2 class="mt-1 font-bold">{{ s.title }}</h2>
+    <p class="mt-1 text-xs text-slate-500">{{ s.seller.name }}</p>
+    <p class="mt-4 text-xs text-slate-500">mulai dari</p>
+    <p class="font-extrabold">{{ s.min_price|rupiah }}</p>
+  </div>
+  {% endfor %}
+</div>
+{% else %}
+<p class="mt-6 text-slate-500">Belum ada jasa yang ditawarkan.</p>
+{% endif %}
+{% endblock %}
