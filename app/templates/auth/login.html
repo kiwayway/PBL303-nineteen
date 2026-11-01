@@ -1,0 +1,19 @@
+{% extends "auth/_base.html" %}
+{% from "auth/_macros.html" import field, submit, google, eye_script %}
+{% set mascot = 'mascot-login.webp' %}
+{% block title %}Login{% endblock %}
+{% block headline %}Belanja lebih mudah, tanpa batas.{% endblock %}
+{% block subline %}Fasco hadir untuk membawa produk favoritmu dengan aman dan cepat.{% endblock %}
+{% block content %}
+<h2 class="text-xl font-bold">Selamat datang kembali</h2><p class="text-sm text-slate-500 mb-6">Masuk untuk melanjutkan belanja.</p>
+<form method="post" action="{{ url_for('auth.login') }}">
+<input type="hidden" name="_csrf" value="{{ csrf_token() }}">
+{{ field('identifier', 'Email atau nomor HP', placeholder='Masukkan email atau nomor HP', value=form.get('identifier','')) }}
+{{ field('password', 'Password', type='password', placeholder='Masukkan password', eye=true) }}
+<div class="flex items-center justify-between text-xs mb-5"><label class="flex items-center gap-2 text-slate-600"><input type="checkbox" name="remember" class="rounded border-slate-300 text-brand focus:ring-brand">Ingat saya</label><a href="{{ url_for('auth.forgot_password') }}" class="font-semibold text-brand hover:underline">Lupa password?</a></div>
+{{ submit('Masuk') }}
+</form>
+{{ google('Masuk dengan Google') }}
+<p class="text-xs text-center text-slate-500 mt-5">Belum punya akun? <a href="{{ url_for('auth.register') }}" class="font-semibold text-brand hover:underline">Daftar sekarang</a></p>
+{% endblock %}
+{% block scripts %}{{ eye_script() }}{% endblock %}

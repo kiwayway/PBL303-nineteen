@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{% block title %}Fasco{% endblock %} - Fasco</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<script>
+tailwind.config={theme:{extend:{fontFamily:{sans:['"Plus Jakarta Sans"','system-ui','sans-serif']},colors:{brand:{DEFAULT:'#2F7BF5',dark:'#1F5FD0',soft:'#EAF3FF'},sun:'#FFC933',ink:'#1B2A4A'}}}}
+</script>
+</head>
+<body class="min-h-screen bg-slate-50 font-sans text-ink flex items-center justify-center p-4">
+<main class="w-full max-w-5xl bg-white rounded-2xl shadow-xl shadow-blue-900/5 overflow-hidden relative">
+  <header class="absolute inset-x-0 top-0 z-10 flex items-center justify-between px-6 py-4 text-xs">
+    <a href="{{ url_for('main.index') }}"><img src="{{ url_for('static', filename='img/logo.png') }}" width="90" alt="Fasco"></a>
+    {% block header_right %}{% endblock %}
+  </header>
+  <div class="grid md:grid-cols-2 min-h-[600px]">
+    <section class="relative overflow-hidden bg-gradient-to-br from-brand-soft to-white px-8 pt-24 pb-8 md:px-10 flex flex-col">
+      <div class="absolute right-0 top-16 w-24 h-24 bg-sun rounded-full opacity-80"></div>
+      <div class="relative z-10">
+        <h1 class="text-3xl md:text-4xl font-extrabold leading-tight text-brand-dark">{% block headline %}{% endblock %}</h1>
+        <p class="mt-3 text-sm text-slate-600 max-w-xs">{% block subline %}{% endblock %}</p>
+      </div>
+      <div class="relative z-10 mt-auto mx-auto pt-6">
+        <img src="{{ url_for('static', filename='img/' ~ mascot) }}" alt="" class="max-h-72 w-auto">
+      </div>
+    </section>
+    <section class="px-8 md:px-12 py-24 flex flex-col justify-center">
+      <div class="w-full max-w-sm mx-auto">
+        {% with messages = get_flashed_messages(with_categories=true) %}
+          {% for cat, msg in messages %}
+          <div role="alert" class="mb-4 rounded-lg px-3 py-2 text-xs font-medium {{ 'bg-red-50 text-red-700 border border-red-200' if cat == 'error' else 'bg-green-50 text-green-700 border border-green-200' }}">{{ msg }}</div>
+          {% endfor %}
+        {% endwith %}
+        {% block content %}{% endblock %}
+      </div>
+    </section>
+  </div>
+</main>
+{% block scripts %}{% endblock %}
+</body>
+</html>

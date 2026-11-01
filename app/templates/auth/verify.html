@@ -1,0 +1,33 @@
+{% extends "auth/_base.html" %}
+{% from "auth/_macros.html" import submit %}
+{% set mascot = 'mascot-email.webp' %}
+{% block title %}Verifikasi{% endblock %}
+{% block header_right %}<a href="{{ back }}" class="font-semibold text-brand">&larr; Kembali</a>{% endblock %}
+{% block headline %}Hampir selesai!{% endblock %}
+{% block subline %}Kami sudah mengirimkan kode verifikasi ke email kamu.{% endblock %}
+{% block content %}
+<h2 class="text-xl font-bold">Konfirmasi kode</h2><p class="text-sm text-slate-500 mb-6">Masukkan kode 6 digit yang telah dikirim ke <span class="font-semibold">{{ email }}</span>.</p>
+<form id="otp-form" method="post" action="{{ url_for('auth.verify') }}">
+<input type="hidden" name="_csrf" value="{{ csrf_token() }}">
+<input type="hidden" name="code" id="code">
+<div class="flex justify-between gap-2 mb-6">
+{% for n in range(1,7) %}<input inputmode="numeric" maxlength="1" aria-label="Digit {{ n }}" class="otp w-11 h-12 text-center text-lg font-semibold rounded-lg border border-slate-200 focus:outline-none focus:ring-2 focus:ring-brand/40 focus:border-brand">{% endfor %}
+</div>
+{{ submit('Verifikasi') }}
+</form>
+<form method="post" action="{{ url_for('auth.resend') }}" class="text-xs text-center text-slate-500 mt-5">
+<input type="hidden" name="_csrf" value="{{ csrf_token() }}">
+Tidak menerima kode? <button id="resend" type="submit" disabled class="font-semibold text-brand disabled:text-slate-400">Kirim ulang (<span id="t">00:59</span>)</button>
+</form>
+{% endblock %}
+{% block scripts %}
+<script>
+const o=[...document.querySelectorAll('.otp')];
+o.forEach((e,i)=>{e.addEventListener('input',()=>{e.value=e.value.replace(/\D/g,'');if(e.value&&o[i+1])o[i+1].focus();});
+e.addEventListener('keydown',k=>{if(k.key==='Backspace'&&!e.value&&o[i-1])o[i-1].focus();});
+e.addEventListener('paste',p=>{const d=(p.clipboardData.getData('text')||'').replace(/\D/g,'').slice(0,6);if(!d)return;p.preventDefault();[...d].forEach((c,j)=>o[j].value=c);o[Math.min(d.length,5)].focus();});});
+document.getElementById('otp-form').addEventListener('submit',()=>{document.getElementById('code').value=o.map(x=>x.value).join('');});
+let s=59;const t=document.getElementById('t'),r=document.getElementById('resend');
+const iv=setInterval(()=>{s--;t.textContent='00:'+String(Math.max(s,0)).padStart(2,'0');if(s<=0){clearInterval(iv);r.disabled=false;r.textContent='Kirim ulang';}},1000);
+</script>
+{% endblock %}

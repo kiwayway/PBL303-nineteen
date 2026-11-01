@@ -1,0 +1,20 @@
+{% extends "auth/_base.html" %}
+{% from "auth/_macros.html" import field, submit, google, eye_script %}
+{% set mascot = 'mascot-register.webp' %}
+{% block title %}Daftar{% endblock %}
+{% block headline %}Yuk, daftar dan mulai belanja!{% endblock %}
+{% block subline %}Dapatkan pengalaman belanja lebih praktis, aman, dan seru bersama Fasco.{% endblock %}
+{% block content %}
+<h2 class="text-xl font-bold">Buat akun</h2><p class="text-sm text-slate-500 mb-6">Lengkapi data untuk membuat akun.</p>
+<form method="post" action="{{ url_for('auth.register') }}">
+<input type="hidden" name="_csrf" value="{{ csrf_token() }}">
+{{ field('name', 'Nama lengkap', placeholder='Masukkan nama lengkap', value=form.get('name','')) }}
+{{ field('email', 'Email', type='email', placeholder='Masukkan email aktif', value=form.get('email','')) }}
+{{ field('phone', 'Nomor HP', type='tel', placeholder='Masukkan nomor HP', value=form.get('phone','')) }}
+{{ field('password', 'Password', type='password', placeholder='Buat password (min. 8 karakter)', extra='minlength="8"', eye=true) }}
+{{ submit('Daftar') }}
+</form>
+{{ google('Daftar dengan Google') }}
+<p class="text-xs text-center text-slate-500 mt-5">Sudah punya akun? <a href="{{ url_for('auth.login') }}" class="font-semibold text-brand hover:underline">Masuk</a></p>
+{% endblock %}
+{% block scripts %}{{ eye_script() }}{% endblock %}
