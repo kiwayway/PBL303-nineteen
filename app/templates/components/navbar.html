@@ -1,0 +1,38 @@
+<header class="absolute inset-x-0 top-0 z-20">
+  <div class="mx-auto flex max-w-7xl flex-wrap items-center gap-x-6 gap-y-2 px-4 py-3 sm:px-6">
+    <a href="{{ url_for('main.index') }}" class="shrink-0">
+      <img src="{{ url_for('static', filename='img/logo.png') }}" width="90" alt="Nineteen Studios">
+    </a>
+
+    <form action="/jasa" method="get" role="search" class="order-last w-full md:order-none md:w-auto md:flex-1 md:max-w-md">
+      <label for="q" class="sr-only">Cari jasa</label>
+      <input id="q" name="q" type="search" placeholder="Cari jasa"
+             class="w-full rounded-md bg-white/80 px-3 py-1.5 text-sm placeholder:text-slate-500 focus:bg-white">
+    </form>
+
+    <nav aria-label="Utama" class="ml-auto flex items-center gap-4 text-xs font-medium sm:gap-5">
+      <a href="{{ url_for('main.index') }}" class="hover:text-brand-dark">Home</a>
+      <a href="/jasa?sort=murah" class="hover:text-brand-dark">Deals</a>
+      <a href="/jasa?sort=terbaru" class="hover:text-brand-dark">New Arrivals</a>
+      <a href="#kategori" class="hover:text-brand-dark">Packages</a>
+
+      {% if user %}
+      <form method="post" action="{{ url_for('auth.logout') }}" class="flex items-center gap-3">
+        <input type="hidden" name="_csrf" value="{{ csrf_token() }}">
+        <span class="flex items-center gap-2">
+          {% if user.avatar %}
+          <img src="{{ user.avatar | media_url }}" alt="" class="h-7 w-7 rounded-full object-cover">
+          {% else %}
+          <span class="grid h-7 w-7 place-items-center rounded-full bg-white/80 text-[11px] font-bold">{{ user.name[:1] | upper }}</span>
+          {% endif %}
+          <span>Halo, <b>{{ user.name }}</b></span>
+        </span>
+        <button class="rounded-md bg-red-500 px-5 py-1.5 font-semibold text-white shadow hover:bg-red-600">Keluar</button>
+      </form>
+      {% else %}
+      <a href="{{ url_for('auth.login') }}" class="rounded-md bg-brand px-5 py-1.5 font-semibold text-white shadow hover:bg-brand-dark">Login</a>
+      <a href="{{ url_for('auth.register') }}" class="rounded-md bg-brand px-5 py-1.5 font-semibold text-white shadow hover:bg-brand-dark">Daftar</a>
+      {% endif %}
+    </nav>
+  </div>
+</header>

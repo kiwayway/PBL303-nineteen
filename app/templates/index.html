@@ -1,34 +1,87 @@
-<!DOCTYPE html>
-<html lang="id">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Nineteen</title>
-<script src="https://cdn.tailwindcss.com"></script>
-<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-<script>tailwind.config={theme:{extend:{fontFamily:{sans:['"Plus Jakarta Sans"','system-ui','sans-serif']},colors:{brand:{DEFAULT:'#2F7BF5',dark:'#1F5FD0',soft:'#EAF3FF'},ink:'#1B2A4A'}}}}</script>
-</head>
-<body class="min-h-screen bg-slate-50 font-sans text-ink">
-<header class="flex items-center justify-between px-6 py-4 bg-white shadow-sm">
-  <img src="{{ url_for('static', filename='img/logo.png') }}" width="90" alt="Nineteen">
-  {% if user %}
-  <form method="post" action="{{ url_for('auth.logout') }}" class="flex items-center gap-3 text-sm">
-    <input type="hidden" name="_csrf" value="{{ csrf_token() }}">
-    <span>Halo, <b>{{ user.name }}</b></span>
-    <button class="rounded-lg border border-slate-200 px-3 py-1.5 font-semibold hover:bg-slate-50">Keluar</button>
-  </form>
-  {% else %}
-  <nav class="flex gap-3 text-sm font-semibold">
-    <a href="{{ url_for('auth.login') }}" class="px-3 py-1.5 text-brand">Masuk</a>
-    <a href="{{ url_for('auth.register') }}" class="rounded-lg bg-brand text-white px-3 py-1.5 hover:bg-brand-dark">Daftar</a>
-  </nav>
-  {% endif %}
-</header>
-<main class="max-w-3xl mx-auto p-8">
-  {% with messages = get_flashed_messages(with_categories=true) %}{% for cat,msg in messages %}
-  <div class="mb-4 rounded-lg px-3 py-2 text-sm bg-green-50 text-green-700 border border-green-200">{{ msg }}</div>{% endfor %}{% endwith %}
-  <h1 class="text-3xl font-extrabold text-brand-dark">PBL303 Nineteen</h1>
-  <p class="mt-2 text-slate-600">Halaman utama sementara. Fitur katalog jasa akan ditambahkan di tahap berikutnya.</p>
+{% extends "base.html" %}
+{% from "components/service_card.html" import service_card %}
+{% block body %}
+{% include "components/navbar.html" %}
+
+<main>
+  <section class="hero-bg px-4 pb-24 pt-28 sm:px-6">
+    <div class="mx-auto max-w-5xl">
+      {% with messages = get_flashed_messages(with_categories=true) %}{% for cat,msg in messages %}
+      <div class="mb-4 rounded-lg border border-green-200 bg-green-50 px-3 py-2 text-sm text-green-700">{{ msg }}</div>{% endfor %}{% endwith %}
+
+      <p class="text-6xl font-extrabold leading-none tracking-tight text-white sm:text-8xl" aria-label="nineteen studios">
+        nineteen<span class="text-sun">.</span><span class="block pl-1 text-2xl font-semibold text-brand sm:text-4xl">studios</span>
+      </p>
+      <h1 class="mt-14 text-2xl font-bold text-brand sm:text-3xl">Kenapa nineteen?</h1>
+      <p class="mt-4 max-w-md text-lg font-light leading-relaxed tracking-wide text-white sm:text-xl">
+        karena kami menyediakan berbagai jasa yang memudahkan kehidupan anda sehari-hari
+      </p>
+
+      <div class="mt-14 rounded-md bg-white p-6 shadow-lg" id="kategori">
+        {% if category_icons %}
+        <ul class="grid grid-cols-4 gap-4 text-center text-xs font-medium sm:grid-cols-8">
+          {% for c in category_icons %}
+          <li><a href="/jasa?kategori={{ c.id }}" class="flex flex-col items-center gap-1 hover:text-brand-dark">
+            <span class="grid h-9 w-9 place-items-center rounded-full bg-brand-soft font-bold text-brand-dark">{{ c.name[:1] | upper }}</span>
+            {{ c.name }}
+          </a></li>
+          {% endfor %}
+        </ul>
+        <ul class="mt-6 grid grid-cols-2 gap-4 sm:grid-cols-3">
+          {% for c in category_tiles %}
+          <li><a href="/jasa?kategori={{ c.id }}" class="relative block aspect-[16/7] overflow-hidden rounded-sm bg-gradient-to-br from-brand to-slate-700">
+            {% if c.cover %}<img src="{{ c.cover | media_url }}" alt="" loading="lazy" class="absolute inset-0 h-full w-full object-cover" onerror="this.remove()">{% endif %}
+            <span class="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/60 to-transparent px-3 pb-2 pt-6 text-xs font-bold text-white">{{ c.name }}</span>
+          </a></li>
+          {% endfor %}
+        </ul>
+        {% else %}
+        <p class="py-6 text-center text-sm text-slate-500">Belum ada kategori jasa.</p>
+        {% endif %}
+      </div>
+    </div>
+  </section>
+
+  <div class="mx-auto max-w-5xl px-4 sm:px-6">
+    <section aria-labelledby="populer" class="mt-4">
+      <h2 id="populer" class="text-2xl font-bold">Jasa paling populer</h2>
+      {% if popular %}
+      <ul class="mt-6 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+        {% for s in popular %}<li class="flex flex-col">{{ service_card(s) }}</li>{% endfor %}
+      </ul>
+      {% else %}
+      <p class="mt-6 rounded-md border border-dashed border-slate-300 p-8 text-center text-sm text-slate-500">Belum ada jasa yang tersedia. Cek lagi nanti.</p>
+      {% endif %}
+    </section>
+
+    <section aria-labelledby="terjangkau" class="mt-16">
+      <h2 id="terjangkau" class="text-2xl font-bold">Jasa terjangkau</h2>
+      {% if affordable %}
+      <ul class="mt-6 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+        {% for s in affordable %}<li class="flex flex-col">{{ service_card(s) }}</li>{% endfor %}
+      </ul>
+      {% else %}
+      <p class="mt-6 rounded-md border border-dashed border-slate-300 p-8 text-center text-sm text-slate-500">Belum ada jasa yang tersedia. Cek lagi nanti.</p>
+      {% endif %}
+    </section>
+
+    <section aria-labelledby="kategori-kerja" class="mt-20">
+      <h2 id="kategori-kerja" class="text-2xl font-bold">Berbagai kategori pekerjaan di nineteen.</h2>
+      {% if categories %}
+      <ul class="mt-6 grid gap-x-8 gap-y-6 sm:grid-cols-2 lg:grid-cols-3">
+        {% for c in categories %}
+        <li><a href="/jasa?kategori={{ c.id }}" class="block hover:text-brand-dark">
+          <h3 class="text-base font-bold">{{ c.name }}</h3>
+          <p class="mt-1 text-sm text-slate-600">{{ c.count }} jasa tersedia</p>
+        </a></li>
+        {% endfor %}
+      </ul>
+      {% else %}
+      <p class="mt-6 text-sm text-slate-500">Kategori akan muncul setelah seller menambahkan jasa.</p>
+      {% endif %}
+    </section>
+  </div>
 </main>
-</body>
-</html>
+
+{% include "components/footer.html" %}
+{% endblock %}

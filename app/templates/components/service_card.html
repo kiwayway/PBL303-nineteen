@@ -1,0 +1,28 @@
+{# Pakai: {% from 'components/service_card.html' import service_card %} #}
+{% macro service_card(s) %}
+<a href="/jasa/{{ s.id }}" class="group flex flex-col overflow-hidden rounded-md border border-slate-200 bg-neutral-50 shadow-sm hover:shadow-md">
+  <div class="flex items-center gap-2 px-3 py-2">
+    {% if s.seller_avatar %}
+    <img src="{{ s.seller_avatar | media_url }}" alt="" class="h-6 w-6 rounded-full object-cover">
+    {% else %}
+    <span class="grid h-6 w-6 place-items-center rounded-full bg-brand-soft text-[10px] font-bold text-brand-dark">{{ s.seller_name[:1] | upper }}</span>
+    {% endif %}
+    <span class="text-[11px] font-semibold">{{ s.seller_name }}</span>
+  </div>
+  <div class="aspect-[16/10] w-full bg-gradient-to-br from-brand-soft to-slate-200">
+    {% if s.image %}
+    <img src="{{ s.image | media_url }}" alt="{{ s.title }}" loading="lazy" class="h-full w-full object-cover"
+         onerror="this.remove()">
+    {% endif %}
+  </div>
+  <div class="flex flex-1 flex-col px-3 pb-3 pt-3">
+    <h3 class="text-sm font-semibold leading-snug">{{ s.title }}</h3>
+    <p class="mt-2 text-[10px] text-slate-500">
+      Terjual {{ s.sold }}{% if s.rating %} | ★ {{ s.rating }}{% endif %}
+    </p>
+    <p class="mt-auto pt-4 text-right text-[10px] text-slate-500">Mulai
+      <span class="block text-xs font-bold text-brand">{{ s.min_price | rupiah }}</span>
+    </p>
+  </div>
+</a>
+{% endmacro %}
