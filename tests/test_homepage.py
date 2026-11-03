@@ -37,12 +37,16 @@ def _seed(price=100000, active_package=True):
     db.session.commit()
 
 
-def test_guest_homepage_shows_login_and_register(client):
+def test_guest_homepage_shows_profile_icon_linking_to_login(client):
     r = client.get("/")
     assert r.status_code == 200
     html = r.get_data(as_text=True)
-    assert "Login" in html and "Daftar" in html
+
+    # Ikon profil tersedia dan mengarah ke halaman login.
+    assert 'href="/login"' in html
+    assert "Daftar" not in html
     assert "Keluar" not in html
+
 
 
 def test_authenticated_homepage_shows_user_and_logout(client, monkeypatch):
