@@ -9,8 +9,11 @@
 <script>
 tailwind.config={theme:{extend:{fontFamily:{sans:['"Plus Jakarta Sans"','system-ui','sans-serif']},colors:{brand:{DEFAULT:'#2F7BF5',dark:'#1F5FD0',soft:'#EAF3FF'},sun:'#FFC933',ink:'#1B2A4A'}}}}
 </script>
+<link rel="stylesheet" href="{{ url_for('static', filename='css/site-loader.css') }}">
+<script src="{{ url_for('static', filename='js/site-loader.js') }}" defer></script>
 </head>
 <body class="min-h-screen bg-slate-50 font-sans text-ink flex items-center justify-center p-4">
+{% include "components/loading_screen.html" %}
 <main class="w-full max-w-5xl bg-white rounded-2xl shadow-xl shadow-blue-900/5 overflow-hidden relative">
   <header class="absolute inset-x-0 top-0 z-10 flex items-center justify-between px-6 py-4 text-xs">
     <a href="{{ url_for('main.index') }}"><img src="{{ url_for('static', filename='img/logo.png') }}" width="90" alt="Nineteen"></a>
