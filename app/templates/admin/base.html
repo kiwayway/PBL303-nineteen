@@ -1,0 +1,46 @@
+{% extends "base.html" %}
+{% block title %}Admin · nineteen studios{% endblock %}
+{% block body %}
+<div class="min-h-screen bg-slate-50">
+  <header class="border-b border-slate-200 bg-white">
+    <div class="mx-auto flex max-w-7xl items-center justify-between px-5 py-4">
+      <a href="{{ url_for('admin.dashboard') }}" class="text-xl font-bold tracking-tight text-brand">nineteen.<span class="text-accent">admin</span></a>
+      <div class="flex items-center gap-3 text-sm">
+        <span class="hidden text-slate-600 sm:inline">{{ admin.name }}</span>
+        <a href="{{ url_for('main.index') }}" class="rounded-lg border px-3 py-2 hover:bg-slate-50">Lihat Marketplace</a>
+        <form method="post" action="{{ url_for('auth.logout') }}">
+          <input type="hidden" name="_csrf" value="{{ csrf_token() }}">
+          <button class="rounded-lg bg-slate-900 px-3 py-2 font-semibold text-white hover:bg-slate-700">Keluar</button>
+        </form>
+      </div>
+    </div>
+  </header>
+  <div class="mx-auto grid max-w-7xl gap-6 px-5 py-6 md:grid-cols-[220px_1fr]">
+    <aside class="h-fit rounded-2xl border border-slate-200 bg-white p-3 shadow-sm">
+      <p class="px-3 pb-2 pt-1 text-xs font-bold uppercase tracking-wider text-slate-400">Administrasi</p>
+      {% set nav = [
+        ('admin.dashboard','Ringkasan','▦'),
+        ('admin.users','Pengguna','♙'),
+        ('admin.services','Jasa','◇'),
+        ('admin.orders','Pesanan','▤'),
+        ('admin.reviews','Ulasan','☆'),
+        ('admin.categories','Kategori','▦')
+      ] %}
+      {% for endpoint,label,icon in nav %}
+      <a href="{{ url_for(endpoint) }}"
+         class="mb-1 flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium {% if request.endpoint == endpoint %}bg-blue-50 text-brand{% else %}text-slate-600 hover:bg-slate-50{% endif %}">
+        <span class="w-5 text-center">{{ icon }}</span>{{ label }}
+      </a>
+      {% endfor %}
+    </aside>
+    <main class="min-w-0">
+      {% with messages = get_flashed_messages(with_categories=true) %}
+        {% for category,message in messages %}
+        <div class="mb-4 rounded-xl border px-4 py-3 text-sm {% if category == 'error' %}border-red-200 bg-red-50 text-red-700{% else %}border-emerald-200 bg-emerald-50 text-emerald-700{% endif %}">{{ message }}</div>
+        {% endfor %}
+      {% endwith %}
+      {% block content %}{% endblock %}
+    </main>
+  </div>
+</div>
+{% endblock %}

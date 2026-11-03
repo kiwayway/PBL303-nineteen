@@ -1,0 +1,6 @@
+{% extends "admin/base.html" %}
+{% block content %}
+<div class="mb-5"><h1 class="text-2xl font-bold">Pesanan</h1><p class="mt-1 text-sm text-slate-500">Monitoring pesanan dan status pembayaran (maksimal 200 terbaru).</p></div>
+<div class="overflow-x-auto rounded-2xl border bg-white shadow-sm"><table class="w-full min-w-[720px] text-left text-sm"><thead class="bg-slate-50 text-xs uppercase text-slate-500"><tr><th class="p-4">ID</th><th class="p-4">Customer</th><th class="p-4">Tanggal</th><th class="p-4">Total</th><th class="p-4">Pembayaran</th><th class="p-4">Bukti</th></tr></thead><tbody>
+{% for o in rows %}<tr class="border-t border-slate-100"><td class="p-4 font-semibold">#{{ o.id }}</td><td class="p-4">{{ o.customer.name if o.customer else '-' }}</td><td class="p-4">{{ o.created_at.strftime('%d-%m-%Y %H:%M') if o.created_at else '-' }}</td><td class="p-4">Rp{{ "{:,.0f}".format(o.total).replace(",", ".") }}</td><td class="p-4"><span class="rounded-full bg-slate-100 px-2.5 py-1 text-xs">{{ o.status }}</span></td><td class="p-4">{% if o.proof_path %}<span class="text-xs text-emerald-700">Tersedia</span>{% else %}<span class="text-xs text-slate-400">-</span>{% endif %}</td></tr>{% else %}<tr><td colspan="6" class="p-8 text-center text-slate-500">Belum ada pesanan.</td></tr>{% endfor %}</tbody></table></div>
+{% endblock %}

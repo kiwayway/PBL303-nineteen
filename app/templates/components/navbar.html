@@ -31,6 +31,9 @@
       <a href="#kategori" class="hover:text-white">Packages</a>
 
       {% if user %}
+      {% if user.role == "admin" %}
+      <a href="{{ url_for('admin.dashboard') }}" class="rounded-md bg-white/90 px-3 py-1.5 font-semibold text-brand shadow hover:bg-white">Dashboard Admin</a>
+      {% endif %}
       <form method="post" action="{{ url_for('auth.logout') }}" class="flex flex-wrap items-center gap-3">
         <input type="hidden" name="_csrf" value="{{ csrf_token() }}">
         <span class="flex items-center gap-2">

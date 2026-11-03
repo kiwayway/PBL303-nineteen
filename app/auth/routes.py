@@ -237,7 +237,8 @@ def resend():
 @bp.route("/login", methods=["GET", "POST"])
 def login():
     if current_user():
-        return redirect(url_for("main.index"))
+        destination = "admin.dashboard" if current_user().role == "admin" else "main.index"
+        return redirect(url_for(destination))
     if request.method == "POST":
         ident = request.form.get("identifier", "").strip()
         password = request.form.get("password", "")
@@ -278,6 +279,8 @@ def login():
         session.clear()
         session["user_id"] = user.id
         session.permanent = remember
+        if user.role == "admin":
+            return redirect(url_for("admin.dashboard"))
         return redirect(url_for("main.index"))
     return render_template("auth/login.html", form={})
 
