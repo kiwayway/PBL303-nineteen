@@ -181,6 +181,8 @@ class Category(db.Model):
     __tablename__ = "categories"
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(80), unique=True, nullable=False)
+    logo_image = db.Column(db.String(255))
+    background_image = db.Column(db.String(255))
     services = db.relationship("Service", backref="category")
 
 

@@ -138,3 +138,69 @@ def test_non_admin_cannot_access_admin_pages(app):
     for path in ["/admin/", "/admin/users", "/admin/services", "/admin/orders",
                  "/admin/reviews", "/admin/categories"]:
         assert client.get(path).status_code == 403
+
+
+def _png_upload(color=(30, 120, 220)):
+    from io import BytesIO
+    from PIL import Image
+
+    stream = BytesIO()
+    Image.new("RGB", (32, 32), color).save(stream, format="PNG")
+    stream.seek(0)
+    return stream
+
+
+def test_admin_can_upload_category_logo_and_background(app):
+    admin = make_user("admin")
+    client = logged_client(app, admin)
+    token = csrf(client, "/admin/categories")
+    response = client.post("/admin/categories", data={
+        "name": "Jasa Kesehatan",
+        "_csrf": token,
+        "logo_image": (_png_upload(), "logo.png", "image/png"),
+        "background_image": (_png_upload((20, 160, 80)), "cover.png", "image/png"),
+    }, content_type="multipart/form-data")
+    assert response.status_code == 302
+    category = Category.query.filter_by(name="Jasa Kesehatan").one()
+    assert category.logo_image.startswith("uploads/categories/")
+    assert category.background_image.startswith("uploads/categories/")
+    assert (app.root_path + "/static/" + category.logo_image)
+    assert client.get("/").status_code == 200
+    assert category.logo_image in client.get("/").get_data(as_text=True)
+
+
+def test_admin_rejects_non_image_even_with_image_extension(app):
+    from io import BytesIO
+
+    admin = make_user("admin")
+    client = logged_client(app, admin)
+    token = csrf(client, "/admin/categories")
+    response = client.post("/admin/categories", data={
+        "name": "Kategori Aman",
+        "_csrf": token,
+        "logo_image": (BytesIO(b"<script>alert(1)</script>"), "fake.png", "image/png"),
+    }, content_type="multipart/form-data", follow_redirects=True)
+    assert response.status_code == 200
+    assert Category.query.filter_by(name="Kategori Aman").first() is None
+    assert "File tidak dapat dibaca sebagai gambar yang valid" in response.get_data(as_text=True)
+
+
+def test_admin_can_replace_and_remove_category_images(app):
+    admin = make_user("admin")
+    category = Category(name="Kategori Gambar")
+    db.session.add(category)
+    db.session.commit()
+    client = logged_client(app, admin)
+    token = csrf(client, "/admin/categories")
+    response = client.post(f"/admin/categories/{category.id}/images", data={
+        "_csrf": token,
+        "logo_image": (_png_upload(), "new.png", "image/png"),
+    }, content_type="multipart/form-data")
+    assert response.status_code == 302
+    category = db.session.get(Category, category.id)
+    assert category.logo_image
+    token = csrf(client, "/admin/categories")
+    client.post(f"/admin/categories/{category.id}/images", data={
+        "_csrf": token, "remove_logo_image": "1",
+    })
+    assert db.session.get(Category, category.id).logo_image is None

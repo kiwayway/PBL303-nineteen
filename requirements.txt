@@ -10,3 +10,4 @@ Werkzeug==3.1.9
 requests==2.33.1
 PyJWT==2.7.0
 cryptography==46.0.6
+Pillow==11.3.0

@@ -7,6 +7,7 @@ from ..auditlog import audit
 from ..auth.routes import current_user
 from ..extensions import db
 from ..models import Category, Order, Review, Service, User
+from .category_images import delete_category_image, save_category_image
 
 bp = Blueprint("admin", __name__, url_prefix="/admin")
 
@@ -124,19 +125,63 @@ def reviews():
 def categories():
     if request.method == "POST":
         name = request.form.get("name", "").strip()
+        logo = request.files.get("logo_image")
+        background = request.files.get("background_image")
         if not name or len(name) > 80:
             flash("Nama kategori wajib diisi (maksimal 80 karakter).", "error")
-        elif Category.query.filter(func.lower(Category.name) == name.lower()).first():
+            return redirect(url_for("admin.categories"))
+        if Category.query.filter(func.lower(Category.name) == name.lower()).first():
             flash("Kategori tersebut sudah ada.", "error")
-        else:
-            db.session.add(Category(name=name))
-            db.session.commit()
-            audit("admin_category_created", user_id=_admin_user().id, category=name)
-            flash("Kategori berhasil ditambahkan.", "success")
+            return redirect(url_for("admin.categories"))
+        category = Category(name=name)
+        try:
+            if logo and logo.filename:
+                category.logo_image = save_category_image(logo, "logo")
+            if background and background.filename:
+                category.background_image = save_category_image(background, "background")
+        except ValueError as exc:
+            # Jangan simpan kategori jika salah satu file gagal divalidasi.
+            for path in (category.logo_image, category.background_image):
+                delete_category_image(path)
+            flash(str(exc), "error")
+            return redirect(url_for("admin.categories"))
+        db.session.add(category)
+        db.session.commit()
+        audit("admin_category_created", user_id=_admin_user().id, category=name)
+        flash("Kategori berhasil ditambahkan.", "success")
         return redirect(url_for("admin.categories"))
     rows = Category.query.order_by(Category.name).all()
     return render_template("admin/categories.html", rows=rows, admin=_admin_user())
 
+
+@bp.post("/categories/<int:category_id>/images")
+def update_category_images(category_id):
+    category = db.get_or_404(Category, category_id)
+    old_paths = []
+    new_paths = []
+    try:
+        for field, kind in (("logo_image", "logo"), ("background_image", "background")):
+            upload = request.files.get(field)
+            remove = request.form.get(f"remove_{field}") == "1"
+            if upload and upload.filename:
+                new_path = save_category_image(upload, kind)
+                new_paths.append(new_path)
+                old_paths.append(getattr(category, field))
+                setattr(category, field, new_path)
+            elif remove:
+                old_paths.append(getattr(category, field))
+                setattr(category, field, None)
+    except ValueError as exc:
+        for path in new_paths:
+            delete_category_image(path)
+        flash(str(exc), "error")
+        return redirect(url_for("admin.categories"))
+    db.session.commit()
+    for path in old_paths:
+        delete_category_image(path)
+    audit("admin_category_images_updated", user_id=_admin_user().id, category_id=category.id)
+    flash("Gambar kategori berhasil diperbarui.", "success")
+    return redirect(url_for("admin.categories"))
 
 @bp.post("/categories/<int:category_id>/delete")
 def delete_category(category_id):
@@ -145,8 +190,11 @@ def delete_category(category_id):
         flash("Kategori tidak dapat dihapus karena masih digunakan oleh jasa.", "error")
     else:
         name = category.name
+        logo_path, background_path = category.logo_image, category.background_image
         db.session.delete(category)
         db.session.commit()
+        delete_category_image(logo_path)
+        delete_category_image(background_path)
         audit("admin_category_deleted", user_id=_admin_user().id, category=name)
         flash("Kategori berhasil dihapus.", "success")
     return redirect(url_for("admin.categories"))

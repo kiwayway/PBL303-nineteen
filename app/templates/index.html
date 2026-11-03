@@ -30,7 +30,11 @@
           {% for c in category_icons %}
           <li>
             <a href="/jasa?kategori={{ c.id }}" class="group flex h-full flex-col items-center gap-1 hover:text-brand">
+              {% if c.logo %}
+              <img src="{{ c.logo | media_url }}" alt="" loading="lazy" class="h-10 w-10 rounded-full object-contain transition group-hover:scale-110">
+              {% else %}
               <span class="block text-3xl text-accent transition group-hover:scale-110">{{ c.name[:1] | upper }}</span>
+              {% endif %}
               <span>{{ c.name }}</span>
             </a>
           </li>
