@@ -258,7 +258,8 @@ def resolve_user(ident):
 @bp.get("/auth/google")
 def google_start():
     if current_user():
-        return redirect(url_for("main.index"))
+        destination = "admin.dashboard" if current_user().role == "admin" else "main.index"
+        return redirect(url_for(destination))
     if not google_enabled():
         flash("Masuk dengan Google belum tersedia.", "error")
         return redirect(url_for("auth.login"))
@@ -351,4 +352,6 @@ def google_callback():
     session["user_id"] = user.id
     if event == "google_register":
         flash("Akun berhasil dibuat. Selamat datang!", "success")
+    if user.role == "admin":
+        return redirect(url_for("admin.dashboard"))
     return redirect(url_for("main.index"))

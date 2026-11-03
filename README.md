@@ -36,6 +36,32 @@ python -m pytest -v         # jalankan test lokal
 - Pesan commit pakai awalan: `feat:`, `fix:`, `ops:`, `chore:`, `docs:`.
 
 
+## Dashboard Admin
+
+Dashboard admin tersedia di `/admin/` dan hanya dapat diakses oleh akun dengan role `admin`.
+Admin masuk melalui halaman `/login`; setelah login, admin otomatis diarahkan ke dashboard.
+
+**Membuat akun admin pertama (tidak ada password default):**
+
+```powershell
+flask --app wsgi create-admin
+```
+
+Ikuti prompt untuk mengisi nama, email, nomor HP, dan password. Password disimpan dalam bentuk hash dan akun dibuat terverifikasi. Jalankan perintah ini dari environment proyek yang sudah memiliki konfigurasi database di `.env`. Jika aplikasi berjalan di Docker:
+
+```powershell
+docker compose exec web flask --app wsgi create-admin
+```
+
+**Menu dashboard:**
+- Ringkasan jumlah pengguna, customer, seller, jasa, pesanan, ulasan, dan nilai pesanan berstatus `approved`.
+- Pengguna: pencarian dan aktivasi/nonaktivasi akun. Admin tidak dapat menonaktifkan akunnya sendiri.
+- Jasa: pencarian dan aktivasi/nonaktivasi jasa.
+- Pesanan dan ulasan: monitoring data marketplace.
+- Kategori: menambah dan menghapus kategori yang belum dipakai jasa.
+
+Semua halaman admin dilindungi pemeriksaan role server-side dan form perubahan data menggunakan token CSRF yang sudah dipakai aplikasi. Tidak ada migrasi database baru untuk dashboard ini.
+
 ## Fitur Autentikasi
 Halaman: `/register`, `/verify` (OTP email), `/login`, `/forgot-password`, `/reset-password`, `POST /logout`.
 - Migrasi database jalan otomatis saat `docker compose up` (`flask db upgrade`).

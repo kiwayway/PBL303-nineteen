@@ -1,0 +1,17 @@
+{% extends "admin/base.html" %}
+{% block content %}
+<div class="mb-5"><h1 class="text-2xl font-bold">Pengguna</h1><p class="mt-1 text-sm text-slate-500">Maksimal 200 hasil terbaru. Admin dapat mengaktifkan atau menonaktifkan akun.</p></div>
+<form method="get" class="mb-4 flex flex-wrap gap-2 rounded-2xl border bg-white p-4">
+  <input name="q" value="{{ q }}" placeholder="Cari nama, email, nomor HP" class="min-w-0 flex-1 rounded-lg border px-3 py-2 text-sm">
+  <select name="role" class="rounded-lg border px-3 py-2 text-sm"><option value="">Semua role</option>{% for r in ['customer','seller','admin'] %}<option value="{{ r }}" {% if role==r %}selected{% endif %}>{{ r }}</option>{% endfor %}</select>
+  <button class="rounded-lg bg-brand px-4 py-2 text-sm font-semibold text-white">Cari</button>
+</form>
+<div class="overflow-x-auto rounded-2xl border bg-white shadow-sm"><table class="w-full min-w-[720px] text-left text-sm">
+<thead class="bg-slate-50 text-xs uppercase text-slate-500"><tr><th class="p-4">Pengguna</th><th class="p-4">Role</th><th class="p-4">Status</th><th class="p-4">Bergabung</th><th class="p-4">Aksi</th></tr></thead>
+<tbody>{% for u in rows %}<tr class="border-t border-slate-100">
+<td class="p-4"><p class="font-semibold">{{ u.name }}</p><p class="text-xs text-slate-500">{{ u.email }}{% if u.phone %} · {{ u.phone }}{% endif %}</p></td>
+<td class="p-4">{{ u.role }}</td><td class="p-4"><span class="rounded-full px-2.5 py-1 text-xs {% if u.is_active %}bg-emerald-50 text-emerald-700{% else %}bg-red-50 text-red-700{% endif %}">{{ 'Aktif' if u.is_active else 'Nonaktif' }}</span></td>
+<td class="p-4">{{ u.created_at.strftime('%d-%m-%Y') if u.created_at else '-' }}</td>
+<td class="p-4">{% if u.id != admin.id %}<form method="post" action="{{ url_for('admin.toggle_user', user_id=u.id) }}"><input type="hidden" name="_csrf" value="{{ csrf_token() }}"><button class="rounded-lg border px-3 py-1.5 text-xs font-semibold hover:bg-slate-50">{{ 'Nonaktifkan' if u.is_active else 'Aktifkan' }}</button></form>{% elif u.id == admin.id %}<span class="text-xs text-slate-400">Akun kamu</span>{% else %}<span class="text-xs text-slate-400">Admin nonaktif</span>{% endif %}</td>
+</tr>{% else %}<tr><td colspan="5" class="p-8 text-center text-slate-500">Pengguna tidak ditemukan.</td></tr>{% endfor %}</tbody></table></div>
+{% endblock %}

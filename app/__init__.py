@@ -87,6 +87,7 @@ def create_app(test_config=None):
     migrate.init_app(app, db)
 
     from . import models  # noqa: F401
+    from .admin import bp as admin_bp
     from .auth import bp as auth_bp
     from .auth.google import google_enabled
     from .auth.routes import csrf_token
@@ -94,6 +95,7 @@ def create_app(test_config=None):
     from .main import bp as main_bp
 
     app.register_blueprint(main_bp)
+    app.register_blueprint(admin_bp)
     app.register_blueprint(auth_bp)
     app.register_blueprint(catalog_bp)
     app.jinja_env.globals["csrf_token"] = csrf_token

@@ -1,0 +1,55 @@
+{% extends "admin/base.html" %}
+{% block content %}
+<div class="mb-6">
+  <p class="text-sm font-medium text-brand">Overview</p>
+  <h1 class="mt-1 text-2xl font-bold text-slate-900">Dashboard Admin</h1>
+  <p class="mt-1 text-sm text-slate-500">Ringkasan aktivitas marketplace nineteen studios.</p>
+</div>
+<div class="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+  {% for label,value,sub in [
+    ('Total Pengguna',stats.users,stats.customers ~ ' customer'),
+    ('Total Seller',stats.sellers,stats.admins ~ ' admin'),
+    ('Total Jasa',stats.services,stats.active_services ~ ' jasa aktif'),
+    ('Total Pesanan',stats.orders,stats.pending_orders ~ ' menunggu proses')
+  ] %}
+  <section class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+    <p class="text-sm text-slate-500">{{ label }}</p>
+    <p class="mt-2 text-3xl font-bold text-slate-900">{{ value }}</p>
+    <p class="mt-1 text-xs text-slate-400">{{ sub }}</p>
+  </section>
+  {% endfor %}
+</div>
+<div class="mt-4 grid gap-4 sm:grid-cols-2">
+  <section class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+    <p class="text-sm text-slate-500">Transaksi disetujui</p>
+    <p class="mt-2 text-2xl font-bold text-slate-900">{{ stats.approved_orders }}</p>
+    <p class="mt-1 text-xs text-slate-400">Total nilai pesanan disetujui</p>
+    <p class="mt-2 text-xl font-semibold text-emerald-700">Rp{{ "{:,.0f}".format(stats.revenue).replace(",", ".") }}</p>
+  </section>
+  <section class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+    <p class="text-sm text-slate-500">Ulasan pelanggan</p>
+    <p class="mt-2 text-2xl font-bold text-slate-900">{{ stats.reviews }}</p>
+    <p class="mt-1 text-xs text-slate-400">Jumlah ulasan yang tersimpan</p>
+  </section>
+</div>
+<div class="mt-6 grid gap-4 xl:grid-cols-2">
+  <section class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+    <div class="mb-4 flex items-center justify-between"><h2 class="font-bold">Pengguna terbaru</h2><a class="text-sm font-semibold text-brand" href="{{ url_for('admin.users') }}">Semua pengguna →</a></div>
+    {% for u in recent_users %}
+    <div class="flex items-center justify-between border-t border-slate-100 py-3 text-sm">
+      <div><p class="font-semibold text-slate-800">{{ u.name }}</p><p class="text-xs text-slate-500">{{ u.email }}</p></div>
+      <span class="rounded-full bg-slate-100 px-2.5 py-1 text-xs">{{ u.role }}</span>
+    </div>
+    {% else %}<p class="text-sm text-slate-500">Belum ada pengguna.</p>{% endfor %}
+  </section>
+  <section class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+    <div class="mb-4 flex items-center justify-between"><h2 class="font-bold">Pesanan terbaru</h2><a class="text-sm font-semibold text-brand" href="{{ url_for('admin.orders') }}">Semua pesanan →</a></div>
+    {% for o in recent_orders %}
+    <div class="flex items-center justify-between border-t border-slate-100 py-3 text-sm">
+      <div><p class="font-semibold text-slate-800">Pesanan #{{ o.id }}</p><p class="text-xs text-slate-500">{{ o.customer.name if o.customer else 'Pengguna tidak tersedia' }}</p></div>
+      <div class="text-right"><p class="font-semibold">Rp{{ "{:,.0f}".format(o.total).replace(",", ".") }}</p><p class="text-xs text-slate-500">{{ o.status }}</p></div>
+    </div>
+    {% else %}<p class="text-sm text-slate-500">Belum ada pesanan.</p>{% endfor %}
+  </section>
+</div>
+{% endblock %}

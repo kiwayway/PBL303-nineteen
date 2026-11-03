@@ -1,0 +1,22 @@
+PBL303-nineteen — Admin Dashboard
+
+Perubahan utama:
+- Blueprint app.admin dengan route /admin/.
+- Dashboard statistik live dari tabel users, services, orders, reviews, dan categories.
+- Pengelolaan status aktif pengguna dan jasa.
+- Manajemen kategori (buat/hapus jika tidak dipakai jasa).
+- Monitoring pesanan dan ulasan.
+- Admin diarahkan ke dashboard setelah login lokal maupun Google OAuth.
+- Link dashboard admin ditampilkan di navbar saat admin login.
+- Proteksi role server-side, CSRF untuk seluruh form POST, audit event untuk perubahan admin.
+- Test baru di tests/test_admin.py.
+
+Akun admin:
+Role admin dan perintah CLI create-admin sudah ada pada repository dasar, jadi tidak diperlukan migrasi atau akun default dengan password statis.
+Jalankan: flask --app wsgi create-admin
+Atau dengan Docker: docker compose exec web flask --app wsgi create-admin
+
+Catatan:
+- ZIP ini sengaja tidak menyertakan .env, .git, .venv, atau cache.
+- Uji otomatis pada lingkungan build: 118 tests passed.
+- Tetap jalankan python -m pytest -v di environment lokal proyek sebelum commit/push.

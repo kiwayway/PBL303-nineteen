@@ -1,0 +1,8 @@
+{% extends "admin/base.html" %}
+{% block content %}
+<div class="mb-5"><h1 class="text-2xl font-bold">Jasa Marketplace</h1><p class="mt-1 text-sm text-slate-500">Kelola visibilitas jasa yang ditawarkan seller.</p></div>
+<form method="get" class="mb-4 flex gap-2 rounded-2xl border bg-white p-4"><input name="q" value="{{ q }}" placeholder="Cari judul jasa" class="min-w-0 flex-1 rounded-lg border px-3 py-2 text-sm"><button class="rounded-lg bg-brand px-4 py-2 text-sm font-semibold text-white">Cari</button></form>
+<div class="overflow-x-auto rounded-2xl border bg-white shadow-sm"><table class="w-full min-w-[680px] text-left text-sm">
+<thead class="bg-slate-50 text-xs uppercase text-slate-500"><tr><th class="p-4">Jasa</th><th class="p-4">Seller</th><th class="p-4">Kategori</th><th class="p-4">Status</th><th class="p-4">Aksi</th></tr></thead>
+<tbody>{% for s in rows %}<tr class="border-t border-slate-100"><td class="p-4 font-semibold">{{ s.title }}</td><td class="p-4">{{ s.seller.name if s.seller else '-' }}</td><td class="p-4">{{ s.category.name if s.category else '-' }}</td><td class="p-4">{{ 'Aktif' if s.is_active else 'Nonaktif' }}</td><td class="p-4"><form method="post" action="{{ url_for('admin.toggle_service', service_id=s.id) }}"><input type="hidden" name="_csrf" value="{{ csrf_token() }}"><button class="rounded-lg border px-3 py-1.5 text-xs font-semibold">{{ 'Nonaktifkan' if s.is_active else 'Aktifkan' }}</button></form></td></tr>{% else %}<tr><td colspan="5" class="p-8 text-center text-slate-500">Belum ada jasa.</td></tr>{% endfor %}</tbody></table></div>
+{% endblock %}
