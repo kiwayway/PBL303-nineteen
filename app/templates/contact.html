@@ -1,0 +1,39 @@
+{% extends "base.html" %}
+{% block title %}Contact Us — nineteen studios{% endblock %}
+{% block body %}
+{% include "components/navbar.html" %}
+<main>
+  <section class="bg-gradient-to-b from-hero to-white pt-10 sm:pt-14">
+    <div class="mx-auto max-w-[1100px] px-5 pb-10 sm:pb-14">
+      <span class="inline-flex rounded-full bg-white/70 px-4 py-1 text-xs font-semibold tracking-wide text-brand">CONTACT US</span>
+      <h1 class="mt-5 max-w-2xl text-4xl font-semibold leading-tight tracking-tight sm:text-6xl">Ada yang bisa <span class="text-brand">kami bantu?</span></h1>
+      <p class="mt-5 max-w-xl text-base leading-relaxed text-white sm:text-lg">Punya pertanyaan, saran, atau kendala? Tim Nineteen siap mendengar dari Anda.</p>
+    </div>
+  </section>
+  <section class="mx-auto grid max-w-[1100px] gap-10 px-5 py-10 sm:py-14 lg:grid-cols-[0.8fr_1.2fr] lg:gap-16">
+    <div>
+      <h2 class="text-2xl font-semibold">Hubungi Kami</h2><div class="mt-2 h-1 w-16 rounded-full bg-accent"></div>
+      <p class="mt-4 text-sm leading-6 text-slate-600">Kami senang mendengar masukan dan pertanyaan dari Anda.</p>
+      <div class="mt-8 flex items-start gap-4"><span class="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-blue-50 text-xl text-brand" aria-hidden="true">✉</span><div><p class="text-sm font-semibold">Email</p><a class="mt-1 text-sm text-brand hover:underline" href="mailto:nineteenofficial3@gmail.com">nineteenofficial3@gmail.com</a></div></div>
+    </div>
+    <div class="rounded-xl border border-slate-100 bg-white p-5 shadow-lg sm:p-8">
+      <h2 class="text-xl font-semibold">Kirim Pesan</h2>
+      {% with messages = get_flashed_messages(with_categories=true) %}
+        {% for category, message in messages %}
+        <div role="status" class="mt-4 rounded-lg border px-4 py-3 text-sm {% if category == 'success' %}border-green-200 bg-green-50 text-green-700{% elif category == 'warning' %}border-amber-200 bg-amber-50 text-amber-800{% else %}border-red-200 bg-red-50 text-red-700{% endif %}">{{ message }}</div>
+        {% endfor %}
+      {% endwith %}
+      <form method="post" class="mt-6 space-y-4">
+        <input type="hidden" name="_csrf" value="{{ csrf_token() }}">
+        <div class="hidden" aria-hidden="true"><label for="website">Website</label><input id="website" name="website" tabindex="-1" autocomplete="off"></div>
+        <div><label for="name" class="mb-1.5 block text-xs font-medium">Nama</label><input id="name" name="name" required minlength="2" maxlength="120" value="{{ form_data.name|default('') }}" autocomplete="name" class="w-full rounded-lg border border-slate-200 px-3 py-2.5 text-sm outline-none transition focus:border-brand" placeholder="Masukkan nama Anda"></div>
+        <div><label for="email" class="mb-1.5 block text-xs font-medium">Email</label><input id="email" name="email" type="email" required maxlength="254" value="{{ form_data.email|default('') }}" autocomplete="email" class="w-full rounded-lg border border-slate-200 px-3 py-2.5 text-sm outline-none transition focus:border-brand" placeholder="Masukkan email Anda"></div>
+        <div><label for="subject" class="mb-1.5 block text-xs font-medium">Subjek</label><input id="subject" name="subject" required minlength="3" maxlength="120" value="{{ form_data.subject|default('') }}" class="w-full rounded-lg border border-slate-200 px-3 py-2.5 text-sm outline-none transition focus:border-brand" placeholder="Subjek pesan"></div>
+        <div><label for="message" class="mb-1.5 block text-xs font-medium">Pesan</label><textarea id="message" name="message" required minlength="10" maxlength="5000" rows="5" class="w-full resize-y rounded-lg border border-slate-200 px-3 py-2.5 text-sm outline-none transition focus:border-brand" placeholder="Tulis pesan Anda di sini...">{{ form_data.message|default('') }}</textarea></div>
+        <button type="submit" class="w-full rounded-lg bg-brand px-5 py-3 text-sm font-semibold text-white shadow-sm transition hover:bg-blue-600 focus-visible:outline-brand">Kirim Pesan <span aria-hidden="true">→</span></button>
+      </form>
+    </div>
+  </section>
+</main>
+{% include "components/footer.html" %}
+{% endblock %}
