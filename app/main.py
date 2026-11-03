@@ -142,7 +142,13 @@ def category_overview():
     ):
         covers.setdefault(cid, image)
     return [
-        {"id": c.id, "name": c.name, "count": counts.get(c.id, 0), "cover": covers.get(c.id)}
+        {
+            "id": c.id,
+            "name": c.name,
+            "count": counts.get(c.id, 0),
+            "logo": c.logo_image,
+            "cover": c.background_image or covers.get(c.id),
+        }
         for c in Category.query.order_by(Category.name).all()
     ]
 
