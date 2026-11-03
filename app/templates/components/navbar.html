@@ -1,23 +1,37 @@
-<header class="absolute inset-x-0 top-0 z-20">
-  <div class="mx-auto flex max-w-7xl flex-wrap items-center gap-x-6 gap-y-2 px-4 py-3 sm:px-6">
-    <a href="{{ url_for('main.index') }}" class="shrink-0">
-      <img src="{{ url_for('static', filename='img/logo.png') }}" width="90" alt="Nineteen Studios">
+<header class="bg-hero">
+  <nav class="mx-auto flex max-w-[1280px] flex-wrap items-center gap-5 px-5 py-3.5">
+    <a href="{{ url_for('main.index') }}" class="shrink-0 text-2xl font-bold leading-none tracking-tighter text-brand" aria-label="nineteen studios, beranda">
+      nineteen.<small class="-mt-0.5 block text-right text-[8px] font-medium tracking-normal text-accent">studios</small>
     </a>
 
-    <form action="/jasa" method="get" role="search" class="order-last w-full md:order-none md:w-auto md:flex-1 md:max-w-md">
-      <label for="q" class="sr-only">Cari jasa</label>
-      <input id="q" name="q" type="search" placeholder="Cari jasa"
-             class="w-full rounded-md bg-white/80 px-3 py-1.5 text-sm placeholder:text-slate-500 focus:bg-white">
-    </form>
+    <button id="menuButton" type="button" class="ml-auto text-3xl leading-none text-white md:hidden"
+            aria-label="Buka menu" aria-controls="siteMenu" aria-expanded="false">☰</button>
 
-    <nav aria-label="Utama" class="ml-auto flex items-center gap-4 text-xs font-medium sm:gap-5">
-      <a href="{{ url_for('main.index') }}" class="hover:text-brand-dark">Home</a>
-      <a href="/jasa?sort=murah" class="hover:text-brand-dark">Deals</a>
-      <a href="/jasa?sort=terbaru" class="hover:text-brand-dark">New Arrivals</a>
-      <a href="#kategori" class="hover:text-brand-dark">Packages</a>
+    <div class="order-last w-full md:order-none md:flex md:flex-1 md:justify-end md:pr-4">
+      <form action="/jasa" method="get" role="search"
+            class="relative w-full transition-all duration-300 ease-out md:w-44 md:focus-within:w-full">
+        <label for="searchInput" class="sr-only">Cari jasa</label>
+        <input id="searchInput" name="q" type="search" placeholder="Search"
+               class="w-full rounded-md bg-white py-1.5 pl-2.5 pr-10 text-[11px] text-gray-800 outline-none placeholder:text-gray-500">
+        <button type="submit" aria-label="Cari"
+                class="absolute inset-y-0 right-0 flex w-9 items-center justify-center text-gray-500 hover:text-brand">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+               stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="h-4 w-4" aria-hidden="true">
+            <circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/>
+          </svg>
+        </button>
+      </form>
+    </div>
+
+    <div id="siteMenu"
+         class="hidden w-full flex-col items-start gap-3 text-[11px] font-medium md:ml-auto md:flex md:w-auto md:flex-row md:items-center md:gap-6">
+      <a href="{{ url_for('main.index') }}" class="hover:text-white">Home</a>
+      <a href="#populer" class="hover:text-white">Deals</a>
+      <a href="#terjangkau" class="hover:text-white">New Arrivals</a>
+      <a href="#kategori" class="hover:text-white">Packages</a>
 
       {% if user %}
-      <form method="post" action="{{ url_for('auth.logout') }}" class="flex items-center gap-3">
+      <form method="post" action="{{ url_for('auth.logout') }}" class="flex flex-wrap items-center gap-3">
         <input type="hidden" name="_csrf" value="{{ csrf_token() }}">
         <span class="flex items-center gap-2">
           {% if user.avatar %}
@@ -27,12 +41,20 @@
           {% endif %}
           <span>Halo, <b>{{ user.name }}</b></span>
         </span>
-        <button class="rounded-md bg-red-500 px-5 py-1.5 font-semibold text-white shadow hover:bg-red-600">Keluar</button>
+        <button type="submit" class="rounded-md bg-white/90 px-3 py-1.5 font-semibold text-brand shadow hover:bg-white">Keluar</button>
       </form>
       {% else %}
-      <a href="{{ url_for('auth.login') }}" class="rounded-md bg-brand px-5 py-1.5 font-semibold text-white shadow hover:bg-brand-dark">Login</a>
-      <a href="{{ url_for('auth.register') }}" class="rounded-md bg-brand px-5 py-1.5 font-semibold text-white shadow hover:bg-brand-dark">Daftar</a>
+      <a href="{{ url_for('auth.login') }}" aria-label="Masuk ke akun" title="Login"
+         class="inline-flex h-9 w-9 items-center justify-center rounded-full text-white transition hover:bg-white/15 hover:text-accent focus:outline-none focus:ring-2 focus:ring-white"
+         style="min-width: 2.25rem;">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none"
+             stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"
+             class="h-7 w-7" aria-hidden="true">
+          <circle cx="12" cy="8" r="4"/>
+          <path d="M4 21v-1a6 6 0 0 1 6-6h4a6 6 0 0 1 6 6v1"/>
+        </svg>
+      </a>
       {% endif %}
-    </nav>
-  </div>
+    </div>
+  </nav>
 </header>

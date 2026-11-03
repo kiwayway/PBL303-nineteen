@@ -4,84 +4,147 @@
 {% include "components/navbar.html" %}
 
 <main>
-  <section class="hero-bg px-4 pb-24 pt-28 sm:px-6">
-    <div class="mx-auto max-w-5xl">
-      {% with messages = get_flashed_messages(with_categories=true) %}{% for cat,msg in messages %}
-      <div class="mb-4 rounded-lg border border-green-200 bg-green-50 px-3 py-2 text-sm text-green-700">{{ msg }}</div>{% endfor %}{% endwith %}
+  <!-- HERO -->
+  <section class="bg-gradient-to-b from-hero to-white pt-8">
+    <div class="mx-auto max-w-[1100px] px-5">
+      {% with messages = get_flashed_messages(with_categories=true) %}
+        {% for cat, msg in messages %}
+        <div class="mb-4 rounded-lg border border-green-200 bg-green-50 px-3 py-2 text-sm text-green-700">{{ msg }}</div>
+        {% endfor %}
+      {% endwith %}
 
-      <p class="text-6xl font-extrabold leading-none tracking-tight text-white sm:text-8xl" aria-label="nineteen studios">
-        nineteen<span class="text-sun">.</span><span class="block pl-1 text-2xl font-semibold text-brand sm:text-4xl">studios</span>
-      </p>
-      <h1 class="mt-14 text-2xl font-bold text-brand sm:text-3xl">Kenapa nineteen?</h1>
-      <p class="mt-4 max-w-md text-lg font-light leading-relaxed tracking-wide text-white sm:text-xl">
+      <h1 class="mt-8 text-[clamp(3.4rem,13vw,7.2rem)] font-semibold leading-none tracking-tighter text-white [-webkit-text-stroke:3px_#ff9a1f] [paint-order:stroke_fill] [text-shadow:0_4px_0_#ff9a1f]">
+        nineteen.
+      </h1>
+      <p class="ml-[clamp(90px,34vw,300px)] -mt-1.5 text-[clamp(1.4rem,5vw,2.6rem)] font-semibold tracking-tight text-accent">studios</p>
+
+      <h2 class="mb-1.5 mt-12 text-[clamp(1.2rem,3.5vw,1.6rem)] font-semibold text-brand">Kenapa nineteen.?</h2>
+      <p class="mb-7 max-w-[640px] text-[clamp(1rem,2.6vw,1.3rem)] leading-relaxed tracking-wider text-white">
         karena kami menyediakan berbagai jasa yang memudahkan kehidupan anda sehari-hari
       </p>
 
-      <div class="mt-14 rounded-md bg-white p-6 shadow-lg" id="kategori">
+      <!-- Panel kategori: ikon kategori dan tile kategori -->
+      <div id="categoryPanel" class="relative z-10 -mb-[60px] rounded-xl bg-white p-4 text-black shadow-xl sm:p-6">
         {% if category_icons %}
-        <ul class="grid grid-cols-4 gap-4 text-center text-xs font-medium sm:grid-cols-8">
+        <ul class="mb-6 grid grid-cols-4 gap-3.5 text-center text-[10px] font-semibold leading-tight md:grid-cols-8">
           {% for c in category_icons %}
-          <li><a href="/jasa?kategori={{ c.id }}" class="flex flex-col items-center gap-1 hover:text-brand-dark">
-            <span class="grid h-9 w-9 place-items-center rounded-full bg-brand-soft font-bold text-brand-dark">{{ c.name[:1] | upper }}</span>
-            {{ c.name }}
-          </a></li>
-          {% endfor %}
-        </ul>
-        <ul class="mt-6 grid grid-cols-2 gap-4 sm:grid-cols-3">
-          {% for c in category_tiles %}
-          <li><a href="/jasa?kategori={{ c.id }}" class="relative block aspect-[16/7] overflow-hidden rounded-sm bg-gradient-to-br from-brand to-slate-700">
-            {% if c.cover %}<img src="{{ c.cover | media_url }}" alt="" loading="lazy" class="absolute inset-0 h-full w-full object-cover" onerror="this.remove()">{% endif %}
-            <span class="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/60 to-transparent px-3 pb-2 pt-6 text-xs font-bold text-white">{{ c.name }}</span>
-          </a></li>
+          <li>
+            <a href="/jasa?kategori={{ c.id }}" class="group flex h-full flex-col items-center gap-1 hover:text-brand">
+              <span class="block text-3xl text-accent transition group-hover:scale-110">{{ c.name[:1] | upper }}</span>
+              <span>{{ c.name }}</span>
+            </a>
+          </li>
           {% endfor %}
         </ul>
         {% else %}
-        <p class="py-6 text-center text-sm text-slate-500">Belum ada kategori jasa.</p>
+        <p class="mb-6 text-center text-sm text-slate-500">Kategori jasa akan muncul di sini.</p>
+        {% endif %}
+
+        {% if category_tiles %}
+        <ul class="grid grid-cols-1 gap-x-6 gap-y-3.5 sm:grid-cols-3">
+          {% for c in category_tiles %}
+          <li>
+            <a href="/jasa?kategori={{ c.id }}" class="relative flex h-[110px] items-end overflow-hidden rounded-lg bg-gradient-to-b from-sky-300 via-emerald-700 to-green-900 sm:h-[90px]">
+              {% if c.cover %}
+              <img src="{{ c.cover | media_url }}" alt="" loading="lazy"
+                   class="absolute inset-0 h-full w-full object-cover" onerror="this.remove()">
+              {% endif %}
+              <span class="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent"></span>
+              <span class="relative p-2.5 text-[11px] font-semibold text-white [text-shadow:0_1px_3px_#000]">{{ c.name }}</span>
+            </a>
+          </li>
+          {% endfor %}
+        </ul>
+        {% else %}
+        <p class="rounded-lg border border-dashed border-slate-200 p-6 text-center text-sm text-slate-500">
+          Belum ada kategori yang tersedia.
+        </p>
         {% endif %}
       </div>
     </div>
   </section>
 
-  <div class="mx-auto max-w-5xl px-4 sm:px-6">
-    <section aria-labelledby="populer" class="mt-4">
-      <h2 id="populer" class="text-2xl font-bold">Jasa paling populer</h2>
+  <!-- JASA PALING POPULER -->
+  <section id="populer" class="scroll-mt-6 pt-24">
+    <div class="mx-auto max-w-[1100px] px-5">
+      <h2 class="mb-5 text-[22px] font-semibold">Jasa paling populer</h2>
       {% if popular %}
-      <ul class="mt-6 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
-        {% for s in popular %}<li class="flex flex-col">{{ service_card(s) }}</li>{% endfor %}
-      </ul>
-      {% else %}
-      <p class="mt-6 rounded-md border border-dashed border-slate-300 p-8 text-center text-sm text-slate-500">Belum ada jasa yang tersedia. Cek lagi nanti.</p>
-      {% endif %}
-    </section>
-
-    <section aria-labelledby="terjangkau" class="mt-16">
-      <h2 id="terjangkau" class="text-2xl font-bold">Jasa terjangkau</h2>
-      {% if affordable %}
-      <ul class="mt-6 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
-        {% for s in affordable %}<li class="flex flex-col">{{ service_card(s) }}</li>{% endfor %}
-      </ul>
-      {% else %}
-      <p class="mt-6 rounded-md border border-dashed border-slate-300 p-8 text-center text-sm text-slate-500">Belum ada jasa yang tersedia. Cek lagi nanti.</p>
-      {% endif %}
-    </section>
-
-    <section aria-labelledby="kategori-kerja" class="mt-20">
-      <h2 id="kategori-kerja" class="text-2xl font-bold">Berbagai kategori pekerjaan di nineteen.</h2>
-      {% if categories %}
-      <ul class="mt-6 grid gap-x-8 gap-y-6 sm:grid-cols-2 lg:grid-cols-3">
-        {% for c in categories %}
-        <li><a href="/jasa?kategori={{ c.id }}" class="block hover:text-brand-dark">
-          <h3 class="text-base font-bold">{{ c.name }}</h3>
-          <p class="mt-1 text-sm text-slate-600">{{ c.count }} jasa tersedia</p>
-        </a></li>
+      <ul class="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
+        {% for s in popular %}
+        <li class="flex min-w-0 flex-col">{{ service_card(s) }}</li>
         {% endfor %}
       </ul>
       {% else %}
-      <p class="mt-6 text-sm text-slate-500">Kategori akan muncul setelah seller menambahkan jasa.</p>
+      <p class="rounded-md border border-dashed border-slate-300 p-8 text-center text-sm text-slate-500">
+        Belum ada jasa yang tersedia. Cek lagi nanti.
+      </p>
       {% endif %}
-    </section>
-  </div>
+    </div>
+  </section>
+
+  <!-- JASA TERJANGKAU -->
+  <section id="terjangkau" class="scroll-mt-6 pt-8">
+    <div class="mx-auto max-w-[1100px] px-5">
+      <h2 class="mb-5 text-[22px] font-semibold">Jasa terjangkau</h2>
+      {% if affordable %}
+      <ul class="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
+        {% for s in affordable %}
+        <li class="flex min-w-0 flex-col">{{ service_card(s) }}</li>
+        {% endfor %}
+      </ul>
+      {% else %}
+      <p class="rounded-md border border-dashed border-slate-300 p-8 text-center text-sm text-slate-500">
+        Belum ada jasa yang tersedia. Cek lagi nanti.
+      </p>
+      {% endif %}
+    </div>
+  </section>
+
+  <!-- KATEGORI PEKERJAAN -->
+  <section id="kategori" class="scroll-mt-6 pt-8">
+    <div class="mx-auto max-w-[1100px] px-5">
+      <h2 class="mb-5 text-[22px] font-semibold">Berbagai Kategori Pekerjaan di nineteen.</h2>
+      {% if categories %}
+      <ul class="grid gap-x-10 gap-y-6 px-4 sm:grid-cols-2 lg:grid-cols-3">
+        {% for c in categories %}
+        <li>
+          <a href="/jasa?kategori={{ c.id }}" class="block hover:text-brand">
+            <h3 class="mb-1.5 text-[15px] font-semibold">{{ c.name }}</h3>
+            <p class="text-xs leading-relaxed text-slate-600">{{ c.count }} jasa tersedia</p>
+          </a>
+        </li>
+        {% endfor %}
+      </ul>
+      {% else %}
+      <p class="text-sm text-slate-500">Kategori akan muncul setelah seller menambahkan jasa.</p>
+      {% endif %}
+    </div>
+  </section>
 </main>
 
 {% include "components/footer.html" %}
+
+<button type="button" id="backToTop" aria-label="Kembali ke atas"
+        class="fixed bottom-[calc(20px+env(safe-area-inset-bottom))] right-3.5 z-50 grid h-9 w-9 place-items-center rounded-full border-2 border-gray-900 bg-white text-base text-gray-900 shadow">
+  ↑
+</button>
+
+<script>
+  (() => {
+    const menuButton = document.getElementById('menuButton');
+    const menu = document.getElementById('siteMenu');
+    if (menuButton && menu) {
+      menuButton.addEventListener('click', () => {
+        const isHidden = menu.classList.toggle('hidden');
+        menuButton.setAttribute('aria-expanded', String(!isHidden));
+        menuButton.setAttribute('aria-label', isHidden ? 'Buka menu' : 'Tutup menu');
+      });
+    }
+
+    const backToTop = document.getElementById('backToTop');
+    if (backToTop) {
+      backToTop.addEventListener('click', () => window.scrollTo({ top: 0, behavior: 'smooth' }));
+    }
+  })();
+</script>
 {% endblock %}
