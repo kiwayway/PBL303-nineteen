@@ -1,27 +1,36 @@
-{# Pakai: {% from 'components/service_card.html' import service_card %} #}
+{# Kartu jasa dinamis untuk homepage marketplace. #}
 {% macro service_card(s) %}
-<a href="/jasa/{{ s.id }}" class="group flex flex-col overflow-hidden rounded-md border border-slate-200 bg-neutral-50 shadow-sm hover:shadow-md">
-  <div class="flex items-center gap-2 px-3 py-2">
+<a href="/jasa/{{ s.id }}"
+   class="group flex min-h-[260px] flex-col overflow-hidden rounded-md border border-gray-300 bg-[#fefcff] transition hover:shadow-lg">
+  <div class="flex items-center gap-2 px-2.5 py-2">
     {% if s.seller_avatar %}
-    <img src="{{ s.seller_avatar | media_url }}" alt="" class="h-6 w-6 rounded-full object-cover">
+    <img src="{{ s.seller_avatar | media_url }}" alt="" loading="lazy" class="h-7 w-7 rounded-full bg-slate-200 object-cover">
     {% else %}
-    <span class="grid h-6 w-6 place-items-center rounded-full bg-brand-soft text-[10px] font-bold text-brand-dark">{{ s.seller_name[:1] | upper }}</span>
+    <span class="grid h-7 w-7 place-items-center rounded-full bg-brand text-[10px] font-semibold text-white">
+      {{ s.seller_name[:1] | upper }}
+    </span>
     {% endif %}
-    <span class="text-[11px] font-semibold">{{ s.seller_name }}</span>
+    <div class="min-w-0">
+      <b class="block truncate text-[10px] font-semibold leading-tight">{{ s.seller_name }}</b>
+      <i class="block text-[7px] not-italic text-gray-500">Penyedia jasa di nineteen.</i>
+    </div>
   </div>
-  <div class="aspect-[16/10] w-full bg-gradient-to-br from-brand-soft to-slate-200">
+
+  <div class="h-[150px] w-full overflow-hidden bg-gradient-to-br from-sky-200 via-slate-300 to-slate-500">
     {% if s.image %}
-    <img src="{{ s.image | media_url }}" alt="{{ s.title }}" loading="lazy" class="h-full w-full object-cover"
+    <img src="{{ s.image | media_url }}" alt="{{ s.title }}" loading="lazy"
+         class="h-full w-full object-cover transition duration-300 group-hover:scale-[1.02]"
          onerror="this.remove()">
     {% endif %}
   </div>
-  <div class="flex flex-1 flex-col px-3 pb-3 pt-3">
-    <h3 class="text-sm font-semibold leading-snug">{{ s.title }}</h3>
-    <p class="mt-2 text-[10px] text-slate-500">
-      Terjual {{ s.sold }}{% if s.rating %} | ★ {{ s.rating }}{% endif %}
+
+  <div class="flex flex-1 flex-col p-3">
+    <h3 class="mb-2 line-clamp-2 text-[13px] font-semibold leading-snug">{{ s.title }}</h3>
+    <p class="text-[9px] text-gray-500">
+      Terjual {{ s.sold }}{% if s.rating %} | <span class="text-accent">★</span> {{ s.rating }}{% endif %}
     </p>
-    <p class="mt-auto pt-4 text-right text-[10px] text-slate-500">Mulai
-      <span class="block text-xs font-bold text-brand">{{ s.min_price | rupiah }}</span>
+    <p class="mt-auto pt-3.5 text-right text-[9px] text-gray-500">Mulai
+      <b class="block text-[10px] text-blue-600">{{ s.min_price | rupiah }}</b>
     </p>
   </div>
 </a>
