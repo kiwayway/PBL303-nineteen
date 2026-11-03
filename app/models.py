@@ -335,3 +335,22 @@ class Review(db.Model):
     created_at = db.Column(db.DateTime(timezone=True), nullable=False, default=utcnow)
 
     customer = db.relationship("User")
+
+
+class ContactInquiry(db.Model):
+    """Pesan yang dikirim pengunjung melalui halaman Contact Us."""
+
+    __tablename__ = "contact_inquiries"
+    __table_args__ = (
+        db.CheckConstraint("length(name) BETWEEN 2 AND 120", name="ck_contact_name_length"),
+        db.CheckConstraint("length(email) BETWEEN 5 AND 254", name="ck_contact_email_length"),
+        db.CheckConstraint("length(subject) BETWEEN 3 AND 120", name="ck_contact_subject_length"),
+        db.CheckConstraint("length(message) BETWEEN 10 AND 5000", name="ck_contact_message_length"),
+    )
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(120), nullable=False)
+    email = db.Column(db.String(254), nullable=False, index=True)
+    subject = db.Column(db.String(120), nullable=False)
+    message = db.Column(db.Text, nullable=False)
+    status = db.Column(db.String(20), nullable=False, default="new", server_default="new", index=True)
+    created_at = db.Column(db.DateTime(timezone=True), nullable=False, default=utcnow, index=True)

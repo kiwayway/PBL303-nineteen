@@ -66,6 +66,8 @@ Semua halaman admin dilindungi pemeriksaan role server-side dan form perubahan d
 Halaman: `/register`, `/verify` (OTP email), `/login`, `/forgot-password`, `/reset-password`, `POST /logout`.
 - Migrasi database jalan otomatis saat `docker compose up` (`flask db upgrade`).
 - Saat dev (`MAIL_SERVER` kosong), kode OTP dicetak di log: `docker compose logs web`.
+- Halaman publik About Us dan Contact Us tersedia di `/about` dan `/contact`. Pesan Contact Us disimpan ke tabel `contact_inquiries` dan notifikasi dikirim ke `CONTACT_EMAIL` (default: `nineteenofficial3@gmail.com`).
+- Untuk mengaktifkan email Contact Us, isi `MAIL_SERVER`, `MAIL_PORT`, `MAIL_USE_TLS`, `MAIL_USERNAME`, dan `MAIL_PASSWORD` di `.env` dengan kredensial SMTP pengirim (untuk Gmail gunakan App Password). `CONTACT_EMAIL` adalah alamat penerima. Jika SMTP gagal, pesan tetap tersimpan di database.
 - Daftar/masuk dengan Google: lihat bagian "Login dengan Google" di bawah. Tombol otomatis nonaktif jika `GOOGLE_CLIENT_ID`/`GOOGLE_CLIENT_SECRET` kosong.
 
 ## Login dengan Google

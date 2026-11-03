@@ -70,6 +70,7 @@ def create_app(test_config=None):
             "MAIL_FROM",
             os.environ.get("MAIL_USERNAME", ""),
         ),
+        CONTACT_EMAIL=os.environ.get("CONTACT_EMAIL", "nineteenofficial3@gmail.com"),
     )
     if test_config:
         app.config.update(test_config)

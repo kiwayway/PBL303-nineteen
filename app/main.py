@@ -1,16 +1,21 @@
 from datetime import datetime
 
-from flask import Blueprint, render_template
+import logging
+import re
+
+from flask import Blueprint, current_app, flash, redirect, render_template, request, url_for
 from sqlalchemy import func
 from sqlalchemy.orm import joinedload
 
 from .auth.routes import current_user
 from .extensions import db
 from .models import (
-    Category, Order, OrderItem, Review, Service, ServicePackage, User,
+    Category, ContactInquiry, Order, OrderItem, Review, Service, ServicePackage, User,
 )
 
 bp = Blueprint("main", __name__)
+log = logging.getLogger(__name__)
+CONTACT_EMAIL_RE = re.compile(r"^[^@\s]+@[^@\s]+\.[^@\s]+$")
 
 CARD_LIMIT = 6        # kartu per bagian (grid 3 kolom x 2 baris)
 CATEGORY_TILES = 6    # kartu kategori bergambar di panel hero
@@ -161,3 +166,54 @@ def index():
 @bp.route("/health")
 def health():
     return {"status": "ok"}
+
+
+@bp.route("/about")
+def about():
+    return render_template("about.html", user=current_user(), now_year=datetime.now().year)
+
+
+@bp.route("/contact", methods=["GET", "POST"])
+def contact():
+    if request.method == "POST":
+        # Honeypot sederhana untuk mengurangi spam bot.
+        if request.form.get("website", "").strip():
+            flash("Pesan berhasil dikirim. Terima kasih sudah menghubungi Nineteen.", "success")
+            return redirect(url_for("main.contact"))
+
+        name = " ".join(request.form.get("name", "").split())
+        email = request.form.get("email", "").strip().lower()
+        subject = " ".join(request.form.get("subject", "").split())
+        message = request.form.get("message", "").strip()
+        errors = []
+        if not 2 <= len(name) <= 120:
+            errors.append("Nama harus terdiri dari 2–120 karakter.")
+        if len(email) > 254 or not CONTACT_EMAIL_RE.fullmatch(email):
+            errors.append("Masukkan alamat email yang valid.")
+        if not 3 <= len(subject) <= 120:
+            errors.append("Subjek harus terdiri dari 3–120 karakter.")
+        if not 10 <= len(message) <= 5000:
+            errors.append("Pesan harus terdiri dari 10–5.000 karakter.")
+
+        if errors:
+            for error in errors:
+                flash(error, "error")
+            return render_template("contact.html", user=current_user(), now_year=datetime.now().year,
+                                   form_data={"name": name, "email": email, "subject": subject, "message": message}), 400
+
+        inquiry = ContactInquiry(name=name, email=email, subject=subject, message=message)
+        db.session.add(inquiry)
+        db.session.commit()
+
+        # Pesan tetap tersimpan walaupun SMTP sedang bermasalah.
+        try:
+            from .mailer import send_contact_email
+            send_contact_email(inquiry)
+        except Exception:
+            log.exception("Pesan Contact Us tersimpan, tetapi notifikasi email gagal dikirim.")
+            flash("Pesan tersimpan. Namun notifikasi email belum berhasil dikirim; tim kami tetap dapat melihat pesan Anda.", "warning")
+        else:
+            flash("Pesan berhasil dikirim. Terima kasih sudah menghubungi Nineteen!", "success")
+        return redirect(url_for("main.contact"))
+
+    return render_template("contact.html", user=current_user(), now_year=datetime.now().year, form_data={})

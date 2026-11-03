@@ -1,0 +1,35 @@
+{% extends "base.html" %}
+{% block title %}About Us — nineteen studios{% endblock %}
+{% block body %}
+{% include "components/navbar.html" %}
+<main>
+  <section class="bg-gradient-to-b from-hero to-white pt-10 sm:pt-14">
+    <div class="mx-auto max-w-[1100px] px-5 pb-12 sm:pb-16">
+      <span class="inline-flex rounded-full bg-white/70 px-4 py-1 text-xs font-semibold tracking-wide text-brand">ABOUT US</span>
+      <div class="mt-5 max-w-2xl">
+        <h1 class="text-4xl font-semibold leading-tight tracking-tight sm:text-6xl">Kenapa <span class="text-brand">nineteen.</span>?</h1>
+        <p class="mt-5 max-w-xl text-base leading-relaxed text-white sm:text-lg">Kami menyediakan berbagai jasa yang memudahkan kehidupan Anda sehari-hari.</p>
+      </div>
+    </div>
+  </section>
+  <section class="mx-auto max-w-[1100px] px-5 py-10 sm:py-14">
+    <div class="max-w-2xl">
+      <h2 class="text-2xl font-semibold sm:text-3xl">Tentang Nineteen</h2>
+      <div class="mt-2 h-1 w-16 rounded-full bg-accent"></div>
+      <p class="mt-5 text-sm leading-7 text-slate-600 sm:text-base">Nineteen adalah marketplace jasa yang menghubungkan penyedia layanan dengan pelanggan dalam satu platform. Kami hadir untuk membantu setiap orang menemukan dan menawarkan jasa dengan cara yang lebih mudah, praktis, dan terpercaya.</p>
+    </div>
+    <div class="mt-10 grid gap-8 border-t border-slate-200 pt-8 sm:grid-cols-2 sm:gap-12">
+      <article class="flex gap-4">
+        <span class="grid h-11 w-11 shrink-0 place-items-center rounded-full bg-blue-50 text-2xl text-brand" aria-hidden="true">◎</span>
+        <div><h3 class="text-lg font-semibold">Visi</h3><p class="mt-2 text-sm leading-6 text-slate-600">Menjadi platform marketplace jasa yang memudahkan masyarakat menemukan layanan berkualitas dan membuka peluang bagi penyedia jasa.</p></div>
+      </article>
+      <article class="flex gap-4">
+        <span class="grid h-11 w-11 shrink-0 place-items-center rounded-full bg-orange-50 text-2xl text-accent" aria-hidden="true">✳</span>
+        <div><h3 class="text-lg font-semibold">Misi</h3><p class="mt-2 text-sm leading-6 text-slate-600">Menghubungkan pelanggan dan penyedia jasa melalui pengalaman yang mudah digunakan, menyediakan ruang untuk memperkenalkan keahlian, serta membantu kebutuhan sehari-hari.</p></div>
+      </article>
+    </div>
+    <div class="mt-10 text-center"><a href="/jasa" class="inline-flex rounded-lg bg-brand px-6 py-3 text-sm font-semibold text-white shadow-sm transition hover:bg-blue-600">Jelajahi Jasa <span class="ml-2" aria-hidden="true">→</span></a></div>
+  </section>
+</main>
+{% include "components/footer.html" %}
+{% endblock %}
