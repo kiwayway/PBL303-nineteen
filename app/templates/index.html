@@ -26,16 +26,16 @@
       <!-- Panel kategori: ikon kategori dan tile kategori -->
       <div id="categoryPanel" class="relative z-10 -mb-[60px] rounded-xl bg-white p-4 text-black shadow-xl sm:p-6">
         {% if category_icons %}
-        <ul class="mb-6 grid grid-cols-4 gap-3.5 text-center text-[10px] font-semibold leading-tight md:grid-cols-8">
+        <ul class="mb-6 grid grid-cols-3 gap-x-2 gap-y-5 text-center text-[10px] font-semibold leading-tight sm:grid-cols-4 sm:gap-x-3 md:grid-cols-6 lg:grid-cols-8">
           {% for c in category_icons %}
           <li>
-            <a href="/jasa?kategori={{ c.id }}" class="group flex h-full flex-col items-center gap-1 hover:text-brand">
+            <a href="/jasa?kategori={{ c.id }}" aria-label="Lihat jasa kategori {{ c.name }}" class="group flex h-full min-w-0 flex-col items-center justify-start gap-1.5 rounded-lg px-1 py-2 transition hover:bg-slate-50 hover:text-brand focus-visible:bg-slate-50">
               {% if c.logo %}
-              <img src="{{ c.logo | media_url }}" alt="" loading="lazy" class="h-10 w-10 rounded-full object-contain transition group-hover:scale-110">
+              <img src="{{ c.logo | media_url }}" alt="" loading="lazy" class="h-11 w-11 shrink-0 rounded-full object-contain transition duration-200 group-hover:scale-110 sm:h-12 sm:w-12">
               {% else %}
-              <span class="block text-3xl text-accent transition group-hover:scale-110">{{ c.name[:1] | upper }}</span>
+              <span class="flex h-11 w-11 shrink-0 items-center justify-center text-3xl text-accent transition duration-200 group-hover:scale-110 sm:h-12 sm:w-12">{{ c.name[:1] | upper }}</span>
               {% endif %}
-              <span>{{ c.name }}</span>
+              <span class="line-clamp-2 min-h-[2.5em] w-full break-words">{{ c.name }}</span>
             </a>
           </li>
           {% endfor %}
@@ -45,16 +45,16 @@
         {% endif %}
 
         {% if category_tiles %}
-        <ul class="grid grid-cols-1 gap-x-6 gap-y-3.5 sm:grid-cols-3">
+        <ul class="grid grid-cols-2 gap-3 sm:gap-4 md:grid-cols-3 xl:grid-cols-4">
           {% for c in category_tiles %}
           <li>
-            <a href="/jasa?kategori={{ c.id }}" class="relative flex h-[110px] items-end overflow-hidden rounded-lg bg-gradient-to-b from-sky-300 via-emerald-700 to-green-900 sm:h-[90px]">
+            <a href="/jasa?kategori={{ c.id }}" aria-label="Lihat jasa kategori {{ c.name }}" class="group relative flex h-[112px] min-w-0 items-end overflow-hidden rounded-lg bg-gradient-to-b from-sky-300 via-emerald-700 to-green-900 shadow-sm transition duration-200 hover:-translate-y-0.5 hover:shadow-md sm:h-[125px] lg:h-[135px]">
               {% if c.cover %}
               <img src="{{ c.cover | media_url }}" alt="" loading="lazy"
-                   class="absolute inset-0 h-full w-full object-cover" onerror="this.remove()">
+                   class="absolute inset-0 h-full w-full object-cover transition duration-500 group-hover:scale-105" onerror="this.remove()">
               {% endif %}
               <span class="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent"></span>
-              <span class="relative p-2.5 text-[11px] font-semibold text-white [text-shadow:0_1px_3px_#000]">{{ c.name }}</span>
+              <span class="relative w-full bg-gradient-to-t from-black/65 to-transparent p-2.5 pt-6 text-[11px] font-semibold leading-snug text-white [text-shadow:0_1px_3px_#000]">{{ c.name }}</span>
             </a>
           </li>
           {% endfor %}
@@ -135,16 +135,6 @@
 
 <script>
   (() => {
-    const menuButton = document.getElementById('menuButton');
-    const menu = document.getElementById('siteMenu');
-    if (menuButton && menu) {
-      menuButton.addEventListener('click', () => {
-        const isHidden = menu.classList.toggle('hidden');
-        menuButton.setAttribute('aria-expanded', String(!isHidden));
-        menuButton.setAttribute('aria-label', isHidden ? 'Buka menu' : 'Tutup menu');
-      });
-    }
-
     const backToTop = document.getElementById('backToTop');
     if (backToTop) {
       backToTop.addEventListener('click', () => window.scrollTo({ top: 0, behavior: 'smooth' }));
