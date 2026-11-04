@@ -18,8 +18,6 @@ log = logging.getLogger(__name__)
 CONTACT_EMAIL_RE = re.compile(r"^[^@\s]+@[^@\s]+\.[^@\s]+$")
 
 CARD_LIMIT = 6        # kartu per bagian (grid 3 kolom x 2 baris)
-CATEGORY_TILES = 6    # kartu kategori bergambar di panel hero
-CATEGORY_ICONS = 8    # ikon kategori di panel hero
 
 
 # ---------------------------------------------------------------- filter template
@@ -164,8 +162,8 @@ def index():
         categories=categories,
         popular=popular_services(),
         affordable=affordable_services(),
-        category_icons=categories[:CATEGORY_ICONS],
-        category_tiles=categories[:CATEGORY_TILES],
+        category_icons=categories,
+        category_tiles=categories,
     )
 
 

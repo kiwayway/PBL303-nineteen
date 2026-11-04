@@ -1,63 +1,202 @@
-<header class="bg-hero">
-  <nav class="mx-auto flex max-w-[1280px] flex-wrap items-center gap-5 px-5 py-3.5">
-    <a href="{{ url_for('main.index') }}" class="shrink-0 text-2xl font-bold leading-none tracking-tighter text-brand" aria-label="nineteen studios, beranda">
-      nineteen.<small class="-mt-0.5 block text-right text-[8px] font-medium tracking-normal text-accent">studios</small>
-    </a>
+<header class="relative z-40 bg-hero">
+  <nav class="mx-auto max-w-[1280px] px-4 py-3 sm:px-5">
+    <!-- DESKTOP: logo, navigasi, search, lalu akun dalam satu baris -->
+    <div class="hidden min-h-12 items-center gap-4 xl:flex">
+      <a href="{{ url_for('main.index') }}"
+         class="shrink-0 text-2xl font-bold leading-none tracking-tighter text-brand"
+         aria-label="nineteen studios, beranda">
+        nineteen.<small class="-mt-0.5 block text-right text-[8px] font-medium tracking-normal text-accent">studios</small>
+      </a>
 
-    <button id="menuButton" type="button" class="ml-auto text-3xl leading-none text-white md:hidden"
-            aria-label="Buka menu" aria-controls="siteMenu" aria-expanded="false">☰</button>
+      <div class="flex shrink-0 items-center justify-center gap-5 whitespace-nowrap text-sm font-semibold">
+        <a href="{{ url_for('main.index') }}" class="hover:text-white">Home</a>
+        <a href="{{ url_for('main.index') }}#populer" class="hover:text-white">Deals</a>
+        <a href="{{ url_for('main.index') }}#terjangkau" class="hover:text-white">New Arrivals</a>
+        <a href="{{ url_for('main.index') }}#kategori" class="hover:text-white">Packages</a>
+      </div>
 
-    <div class="order-last w-full md:order-none md:flex md:flex-1 md:justify-end md:pr-4">
-      <form action="/jasa" method="get" role="search"
-            class="relative w-full transition-all duration-300 ease-out md:w-44 md:focus-within:w-full">
-        <label for="searchInput" class="sr-only">Cari jasa</label>
-        <input id="searchInput" name="q" type="search" placeholder="Search"
-               class="w-full rounded-md bg-white py-1.5 pl-2.5 pr-10 text-[11px] text-gray-800 outline-none placeholder:text-gray-500">
-        <button type="submit" aria-label="Cari"
-                class="absolute inset-y-0 right-0 flex w-9 items-center justify-center text-gray-500 hover:text-brand">
-          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-               stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="h-4 w-4" aria-hidden="true">
+      <!-- Kolom search pendek saat idle, melebar ketika area search difokuskan -->
+      <form id="desktopSearch" action="/jasa" method="get" role="search"
+            class="desktop-search relative ml-auto flex h-10 w-40 min-w-[10rem] flex-1 max-w-[260px] items-center overflow-hidden rounded-xl border border-white/60 bg-white shadow-sm transition-[max-width,flex-grow,box-shadow] duration-300 ease-out">
+        <label for="desktopSearchInput" class="sr-only">Cari jasa</label>
+        <input id="desktopSearchInput" name="q" type="search" placeholder="Cari jasa..."
+               autocomplete="off"
+               class="desktop-search-input h-full min-w-0 flex-1 border-0 bg-transparent px-3 text-sm text-slate-800 outline-none placeholder:text-slate-500">
+        <button type="submit" aria-label="Cari jasa"
+                class="flex h-10 w-10 shrink-0 items-center justify-center text-slate-600 transition hover:text-brand">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none"
+               stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+               class="h-5 w-5" aria-hidden="true">
             <circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/>
           </svg>
         </button>
       </form>
-    </div>
 
-    <div id="siteMenu"
-         class="hidden w-full flex-col items-start gap-3 text-[11px] font-medium md:ml-auto md:flex md:w-auto md:flex-row md:items-center md:gap-6">
-      <a href="{{ url_for('main.index') }}" class="hover:text-white">Home</a>
-      <a href="#populer" class="hover:text-white">Deals</a>
-      <a href="#terjangkau" class="hover:text-white">New Arrivals</a>
-      <a href="#kategori" class="hover:text-white">Packages</a>
-
-      {% if user %}
-      {% if user.role == "admin" %}
-      <a href="{{ url_for('admin.dashboard') }}" class="rounded-md bg-white/90 px-3 py-1.5 font-semibold text-brand shadow hover:bg-white">Dashboard Admin</a>
-      {% endif %}
-      <form method="post" action="{{ url_for('auth.logout') }}" class="flex flex-wrap items-center gap-3">
-        <input type="hidden" name="_csrf" value="{{ csrf_token() }}">
-        <span class="flex items-center gap-2">
-          {% if user.avatar %}
-          <img src="{{ user.avatar | media_url }}" alt="" class="h-7 w-7 rounded-full object-cover">
-          {% else %}
-          <span class="grid h-7 w-7 place-items-center rounded-full bg-white/80 text-[11px] font-bold">{{ user.name[:1] | upper }}</span>
+      <!-- Area akun selalu di sebelah kanan search -->
+      <div class="flex shrink-0 items-center gap-3">
+        {% if user %}
+          {% if user.role == "admin" %}
+          <a href="{{ url_for('admin.dashboard') }}"
+             class="whitespace-nowrap rounded-xl bg-white/95 px-3 py-2 text-sm font-semibold text-brand shadow-sm transition hover:bg-white">
+            Dashboard Admin
+          </a>
           {% endif %}
-          <span>Halo, <b>{{ user.name }}</b></span>
-        </span>
-        <button type="submit" class="rounded-md bg-white/90 px-3 py-1.5 font-semibold text-brand shadow hover:bg-white">Keluar</button>
-      </form>
-      {% else %}
-      <a href="{{ url_for('auth.login') }}" aria-label="Masuk ke akun" title="Login"
-         class="inline-flex h-9 w-9 items-center justify-center rounded-full text-white transition hover:bg-white/15 hover:text-accent focus:outline-none focus:ring-2 focus:ring-white"
-         style="min-width: 2.25rem;">
-        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none"
-             stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"
-             class="h-7 w-7" aria-hidden="true">
-          <circle cx="12" cy="8" r="4"/>
-          <path d="M4 21v-1a6 6 0 0 1 6-6h4a6 6 0 0 1 6 6v1"/>
-        </svg>
+          <span class="flex max-w-[170px] items-center gap-2 whitespace-nowrap text-sm">
+            {% if user.avatar %}
+            <img src="{{ user.avatar | media_url }}" alt="" class="h-8 w-8 rounded-full object-cover">
+            {% else %}
+            <span class="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-white/80 font-bold">{{ user.name[:1] | upper }}</span>
+            {% endif %}
+            <span class="truncate">Halo, <b>{{ user.name }}</b></span>
+          </span>
+          <form method="post" action="{{ url_for('auth.logout') }}">
+            <input type="hidden" name="_csrf" value="{{ csrf_token() }}">
+            <button type="submit" class="whitespace-nowrap rounded-xl bg-white/95 px-3 py-2 text-sm font-semibold text-brand shadow-sm transition hover:bg-white">Keluar</button>
+          </form>
+        {% else %}
+          <a href="{{ url_for('auth.login') }}" aria-label="Masuk ke akun" title="Login"
+             class="inline-flex h-10 w-10 items-center justify-center rounded-full text-white transition hover:bg-white/15 hover:text-accent">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none"
+                 stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"
+                 class="h-7 w-7" aria-hidden="true">
+              <circle cx="12" cy="8" r="4"/><path d="M4 21v-1a6 6 0 0 1 6-6h4a6 6 0 0 1 6 6v1"/>
+            </svg>
+          </a>
+        {% endif %}
+      </div>
+    </div>
+
+    <!-- MOBILE/TABLET: logo kiri, hamburger kanan -->
+    <div class="flex min-h-12 items-center justify-between gap-4 xl:hidden">
+      <a href="{{ url_for('main.index') }}"
+         class="shrink-0 text-2xl font-bold leading-none tracking-tighter text-brand"
+         aria-label="nineteen studios, beranda">
+        nineteen.<small class="-mt-0.5 block text-right text-[8px] font-medium tracking-normal text-accent">studios</small>
       </a>
+      <button id="menuButton" type="button"
+              class="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-xl text-white transition hover:bg-white/15 focus-visible:outline-white"
+              aria-label="Buka menu" aria-controls="siteMenu" aria-expanded="false">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none"
+             stroke="currentColor" stroke-width="2" stroke-linecap="round" class="h-8 w-8" aria-hidden="true">
+          <path d="M4 6h16M4 12h16M4 18h16"/>
+        </svg>
+      </button>
+    </div>
+
+    <div id="siteMenu" class="mt-3 hidden rounded-2xl border border-white/40 bg-white p-3 text-slate-800 shadow-xl xl:hidden">
+      <div class="grid gap-1 text-sm font-semibold">
+        <a href="{{ url_for('main.index') }}" class="rounded-lg px-3 py-3 hover:bg-slate-50">Home</a>
+        <a href="{{ url_for('main.index') }}#populer" class="rounded-lg px-3 py-3 hover:bg-slate-50">Deals</a>
+        <a href="{{ url_for('main.index') }}#terjangkau" class="rounded-lg px-3 py-3 hover:bg-slate-50">New Arrivals</a>
+        <a href="{{ url_for('main.index') }}#kategori" class="rounded-lg px-3 py-3 hover:bg-slate-50">Packages</a>
+      </div>
+      {% if user %}
+      <div class="mt-2 border-t border-slate-200 pt-3">
+        <div class="flex items-center gap-3 px-3 py-2">
+          {% if user.avatar %}
+          <img src="{{ user.avatar | media_url }}" alt="" class="h-9 w-9 rounded-full object-cover">
+          {% else %}
+          <span class="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-slate-100 font-bold">{{ user.name[:1] | upper }}</span>
+          {% endif %}
+          <span class="min-w-0 truncate text-sm">Halo, <b>{{ user.name }}</b></span>
+        </div>
+        {% if user.role == "admin" %}
+        <a href="{{ url_for('admin.dashboard') }}" class="mt-2 block rounded-xl bg-blue-50 px-3 py-3 text-sm font-semibold text-brand hover:bg-blue-100">Dashboard Admin</a>
+        {% endif %}
+        <form method="post" action="{{ url_for('auth.logout') }}" class="mt-2">
+          <input type="hidden" name="_csrf" value="{{ csrf_token() }}">
+          <button type="submit" class="w-full rounded-xl bg-slate-900 px-3 py-3 text-left text-sm font-semibold text-white hover:bg-slate-700">Keluar</button>
+        </form>
+      </div>
+      {% else %}
+      <a href="{{ url_for('auth.login') }}" class="mt-2 block rounded-xl bg-blue-50 px-3 py-3 text-sm font-semibold text-brand hover:bg-blue-100">Masuk ke akun</a>
       {% endif %}
     </div>
+
+    <!-- Search mobile/tablet -->
+    <form action="/jasa" method="get" role="search" class="relative mt-3 w-full xl:hidden">
+      <label for="mobileSearchInput" class="sr-only">Cari jasa</label>
+      <input id="mobileSearchInput" name="q" type="search" placeholder="Cari jasa..."
+             class="w-full rounded-xl border border-white/50 bg-white py-3 pl-4 pr-12 text-sm text-slate-800 shadow-sm outline-none placeholder:text-slate-500 focus:border-brand focus:ring-2 focus:ring-brand/20">
+      <button type="submit" aria-label="Cari"
+              class="absolute inset-y-0 right-0 flex w-12 items-center justify-center text-slate-500 transition hover:text-brand">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+             stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="h-5 w-5" aria-hidden="true">
+          <circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/>
+        </svg>
+      </button>
+    </form>
   </nav>
 </header>
+
+<style>
+  @media (min-width: 1280px) {
+    #desktopSearch.is-expanded {
+      max-width: 520px;
+      flex-grow: 1;
+      box-shadow: 0 0 0 2px rgb(47 128 237 / 18%);
+    }
+  }
+</style>
+
+<script>
+  (() => {
+    const menuButton = document.getElementById('menuButton');
+    const menu = document.getElementById('siteMenu');
+
+    if (menuButton && menu && !menuButton.dataset.bound) {
+      menuButton.dataset.bound = 'true';
+      const closeMenu = () => {
+        menu.classList.add('hidden');
+        menuButton.setAttribute('aria-expanded', 'false');
+        menuButton.setAttribute('aria-label', 'Buka menu');
+      };
+      menuButton.addEventListener('click', () => {
+        const opening = menu.classList.contains('hidden');
+        menu.classList.toggle('hidden', !opening);
+        menuButton.setAttribute('aria-expanded', String(opening));
+        menuButton.setAttribute('aria-label', opening ? 'Tutup menu' : 'Buka menu');
+      });
+      menu.querySelectorAll('a').forEach(a => a.addEventListener('click', closeMenu));
+      document.addEventListener('keydown', e => { if (e.key === 'Escape') closeMenu(); });
+    }
+
+    const search = document.getElementById('desktopSearch');
+    const input = document.getElementById('desktopSearchInput');
+
+    if (search && input && !search.dataset.bound) {
+      search.dataset.bound = 'true';
+
+      const expand = () => search.classList.add('is-expanded');
+      const collapse = () => search.classList.remove('is-expanded');
+
+      // Klik di bagian mana pun pada kolom langsung mengaktifkan input.
+      search.addEventListener('click', event => {
+        if (event.target.closest('button')) return;
+        expand();
+        if (document.activeElement !== input) input.focus();
+      });
+
+      // Fokus keyboard maupun mouse otomatis melebarkan kolom.
+      input.addEventListener('focus', expand);
+
+      // Saat fokus keluar dari seluruh area search, kolom kembali ke ukuran awal.
+      search.addEventListener('focusout', event => {
+        if (!search.contains(event.relatedTarget)) collapse();
+      });
+
+      // Klik di luar area search juga menutup tampilan lebar.
+      document.addEventListener('pointerdown', event => {
+        if (!search.contains(event.target)) collapse();
+      });
+
+      // Escape menutup kolom dan mengembalikan fokus.
+      document.addEventListener('keydown', event => {
+        if (event.key === 'Escape' && search.classList.contains('is-expanded')) {
+          collapse();
+          input.blur();
+        }
+      });
+    }
+  })();
+</script>
