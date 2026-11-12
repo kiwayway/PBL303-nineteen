@@ -189,6 +189,8 @@ def verify():
     email = user.email if user else session["pending_email"]
 
     back = url_for("auth.register" if purpose == OtpCode.PURPOSE_VERIFY else "auth.forgot_password")
+    if purpose == OtpCode.PURPOSE_RESET and session.get("pending_from") == "profile":
+        back = url_for("profile.security")
     if request.method == "POST":
         code = re.sub(r"\D", "", request.form.get("code", ""))
         if len(code) != 6:
@@ -299,6 +301,7 @@ def forgot_password():
         user = User.query.filter_by(email=email, is_verified=True).first()
         audit("password_reset_requested", ip=client_ip(), email=email, known=bool(user))
         session.pop("pending_user_id", None)
+        session.pop("pending_from", None)
         session["pending_purpose"] = OtpCode.PURPOSE_RESET
         session["pending_email"] = email
         if user:

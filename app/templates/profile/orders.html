@@ -1,0 +1,61 @@
+{% extends "profile/_layout.html" %}
+{% from "profile/_ui.html" import badge, thumb, empty, btn %}
+{% set active = 'orders' %}
+{% block content %}
+<h1 class="text-2xl font-bold text-slate-900">Pesanan Saya</h1>
+<p class="mt-1 text-sm text-slate-600">Semua transaksi layanan kamu.</p>
+
+<div class="mt-5 flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+  <nav aria-label="Filter status" class="-mx-1 flex gap-2 overflow-x-auto px-1 pb-1">
+    {% for code, label in filters %}
+    <a href="{{ url_for('profile.orders', status=code, q=q or None) }}" {% if code == status %}aria-current="true"{% endif %}
+       class="whitespace-nowrap rounded-full border px-4 py-2 text-sm font-medium {% if code == status %}border-brand bg-brand text-white{% else %}border-slate-300 bg-white text-slate-700 hover:bg-slate-50{% endif %}">{{ label }} <span class="opacity-80">({{ tab_counts[code] }})</span></a>
+    {% endfor %}
+  </nav>
+  <form method="get" role="search" class="flex gap-2">
+    <input type="hidden" name="status" value="{{ status }}">
+    <label for="q" class="sr-only">Cari pesanan</label>
+    <input id="q" name="q" type="search" value="{{ q }}" placeholder="Nama layanan / nomor pesanan" class="min-h-11 w-full min-w-[14rem] rounded-xl border border-slate-300 bg-white px-3.5 text-sm focus:border-brand focus:outline-none focus:ring-2 focus:ring-brand/30">
+    {{ btn('Cari', 'secondary') }}
+  </form>
+</div>
+
+<div class="mt-4 space-y-3">
+  {% for o in rows %}
+  <article class="rounded-2xl border border-slate-200 bg-white p-4 sm:p-5">
+    <div class="flex flex-wrap items-center justify-between gap-2 text-xs text-slate-600">
+      <span><b class="text-slate-800">{{ o.no }}</b> · {{ o.created_at | tgl }}</span>{{ badge(o.state, o.label) }}
+    </div>
+    <div class="mt-3 flex items-center gap-4">
+      {{ thumb(o.image) }}
+      <div class="min-w-0 flex-1">
+        <h2 class="truncate font-semibold text-slate-900">{{ o.title }}{% if o.extra %} <span class="font-normal text-slate-500">+{{ o.extra }} lainnya</span>{% endif %}</h2>
+        <p class="truncate text-sm text-slate-600">oleh {{ o.seller }}{% if o["items"] %} · Paket {{ o["items"][0].package }}, {{ o["items"][0].duration }} hari{% endif %}</p>
+      </div>
+      <p class="text-right text-sm font-bold text-slate-900">{{ o.total | rupiah }}</p>
+    </div>
+    <div class="mt-4 flex flex-wrap justify-end gap-2">
+      {% if o.state == 'done' %}
+        {% for it in o["items"] if it.service_active %}{% if loop.first %}<a href="{{ url_for('catalog.list_services') }}" class="inline-flex min-h-10 items-center rounded-xl border border-slate-300 px-4 text-sm font-semibold text-slate-700 hover:bg-slate-50">Pesan Lagi</a>{% endif %}{% endfor %}
+        {% for it in o["items"] if not it.review %}{% if loop.first %}<a href="{{ url_for('profile.reviews', item=it.item.id) }}" class="inline-flex min-h-10 items-center rounded-xl border border-slate-300 px-4 text-sm font-semibold text-[#1f5fd0] hover:bg-blue-50">Beri Ulasan</a>{% endif %}{% endfor %}
+      {% endif %}
+      <a href="{{ url_for('profile.order_detail', order_id=o.id) }}" class="inline-flex min-h-10 items-center rounded-xl bg-brand px-4 text-sm font-semibold text-white hover:bg-[#1f5fd0]">Detail</a>
+    </div>
+  </article>
+  {% else %}
+  {% if q or status != 'all' %}
+    {{ empty('Tidak ada pesanan yang cocok', 'Coba ubah filter status atau kata kunci pencarian.', url_for('profile.orders'), 'Reset filter') }}
+  {% else %}
+    {{ empty('Belum ada pesanan', 'Pesanan kamu akan muncul di sini setelah kamu memesan jasa.', url_for('catalog.list_services'), 'Jelajahi Jasa') }}
+  {% endif %}
+  {% endfor %}
+</div>
+
+{% if pages > 1 %}
+<nav aria-label="Halaman" class="mt-5 flex items-center justify-center gap-3 text-sm">
+  {% if page > 1 %}<a class="rounded-xl border border-slate-300 bg-white px-4 py-2 font-semibold hover:bg-slate-50" href="{{ url_for('profile.orders', status=status, q=q or None, page=page-1) }}">← Sebelumnya</a>{% endif %}
+  <span class="text-slate-600">Halaman {{ page }} dari {{ pages }}</span>
+  {% if page < pages %}<a class="rounded-xl border border-slate-300 bg-white px-4 py-2 font-semibold hover:bg-slate-50" href="{{ url_for('profile.orders', status=status, q=q or None, page=page+1) }}">Berikutnya →</a>{% endif %}
+</nav>
+{% endif %}
+{% endblock %}

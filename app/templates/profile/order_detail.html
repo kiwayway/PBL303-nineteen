@@ -1,0 +1,68 @@
+{% extends "profile/_layout.html" %}
+{% from "profile/_ui.html" import badge, thumb %}
+{% set active = 'orders' %}
+{% block content %}
+<a href="{{ url_for('profile.orders') }}" class="text-sm font-semibold text-[#1f5fd0] hover:underline">← Pesanan Saya</a>
+<div class="mt-2 flex flex-wrap items-center justify-between gap-3">
+  <div><h1 class="text-2xl font-bold text-slate-900">Pesanan {{ o.no }}</h1>
+  <p class="mt-1 text-sm text-slate-600">Dipesan {{ o.created_at | tgl }}</p></div>
+  {{ badge(o.state, o.label) }}
+</div>
+
+<div class="mt-5 grid gap-4 lg:grid-cols-[minmax(0,1.5fr)_minmax(0,1fr)]">
+  <div class="space-y-4">
+    <section class="rounded-2xl border border-slate-200 bg-white p-5" aria-labelledby="layanan">
+      <h2 id="layanan" class="font-bold text-slate-900">Layanan yang dipesan</h2>
+      <ul class="mt-3 divide-y divide-slate-100">
+        {% for it in o["items"] %}
+        <li class="flex items-center gap-4 py-3">
+          {{ thumb(it.image) }}
+          <div class="min-w-0 flex-1">
+            <p class="truncate font-semibold text-slate-900">{{ it.title }}</p>
+            <p class="text-sm text-slate-600">Penyedia: {{ it.seller }} · Paket {{ it.package }} · {{ it.duration }} hari</p>
+            <p class="text-xs text-slate-500">Pengerjaan: {{ 'Selesai' if it.done else 'Sedang berjalan' }}</p>
+          </div>
+          <div class="text-right">
+            <p class="text-sm font-bold text-slate-900">{{ it.price | rupiah }}</p>
+            {% if it.done and not it.review %}<a class="text-xs font-semibold text-[#1f5fd0] hover:underline" href="{{ url_for('profile.reviews', item=it.item.id) }}">Beri ulasan</a>{% endif %}
+          </div>
+        </li>
+        {% endfor %}
+      </ul>
+    </section>
+
+    <section class="rounded-2xl border border-slate-200 bg-white p-5" aria-labelledby="tahap">
+      <h2 id="tahap" class="font-bold text-slate-900">Status pesanan</h2>
+      {% if o.state == 'cancelled' %}
+      <p class="mt-3 text-sm text-slate-700">Pembayaran ditolak atau pesanan dibatalkan.{% if o.order.note %} Alasan: {{ o.order.note }}{% endif %}</p>
+      {% else %}
+      <ol class="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-4">
+        {% for label, ok in steps %}
+        <li><div class="h-1.5 rounded-full {{ 'bg-brand' if ok else 'bg-slate-200' }}"></div>
+        <p class="mt-2 text-xs {{ 'font-semibold text-slate-900' if ok else 'text-slate-500' }}">{{ label }}<span class="sr-only">{{ ' (tercapai)' if ok else ' (belum)' }}</span></p></li>
+        {% endfor %}
+      </ol>
+      {% endif %}
+    </section>
+  </div>
+
+  <div class="space-y-4">
+    <section class="rounded-2xl border border-slate-200 bg-white p-5" aria-labelledby="harga">
+      <h2 id="harga" class="font-bold text-slate-900">Rincian harga</h2>
+      <dl class="mt-3 space-y-2 text-sm">
+        {% for it in o["items"] %}<div class="flex justify-between gap-3"><dt class="text-slate-600">{{ it.title }}</dt><dd>{{ it.price | rupiah }}</dd></div>{% endfor %}
+        <div class="flex justify-between border-t border-slate-200 pt-3 font-bold text-slate-900"><dt>Total</dt><dd>{{ o.total | rupiah }}</dd></div>
+      </dl>
+    </section>
+    <section class="rounded-2xl border border-slate-200 bg-white p-5" aria-labelledby="bayar">
+      <h2 id="bayar" class="font-bold text-slate-900">Pembayaran</h2>
+      <p class="mt-2 text-sm text-slate-700">Status: <b>{{ {'pending': 'Menunggu pembayaran', 'waiting': 'Menunggu verifikasi bukti bayar', 'approved': 'Lunas', 'rejected': 'Ditolak'}[o.order.status] }}</b></p>
+    </section>
+    <section class="rounded-2xl border border-slate-200 bg-white p-5">
+      <h2 class="font-bold text-slate-900">Ada kendala?</h2>
+      <p class="mt-1 text-sm text-slate-600">Tim kami siap membantu pesananmu.</p>
+      <a href="{{ url_for('main.contact') }}" class="mt-3 inline-flex min-h-11 items-center rounded-xl border border-slate-300 px-5 text-sm font-semibold text-slate-700 hover:bg-slate-50">Hubungi Bantuan</a>
+    </section>
+  </div>
+</div>
+{% endblock %}

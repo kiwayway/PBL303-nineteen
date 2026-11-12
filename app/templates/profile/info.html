@@ -1,0 +1,67 @@
+{% extends "profile/_layout.html" %}
+{% from "profile/_ui.html" import avatar, field, btn %}
+{% set active = 'info' %}
+{% block content %}
+<div class="flex flex-wrap items-end justify-between gap-3">
+  <div><h1 class="text-2xl font-bold text-slate-900">Informasi Pribadi</h1>
+  <p class="mt-1 text-sm text-slate-600">Lihat dan perbarui data akun kamu.</p></div>
+  {% if not edit %}<a href="{{ url_for('profile.info', edit=1) }}" class="inline-flex min-h-11 items-center rounded-xl bg-brand px-5 text-sm font-semibold text-white hover:bg-[#1f5fd0]">Edit Profil</a>{% endif %}
+</div>
+
+<section class="mt-5 rounded-2xl border border-slate-200 bg-white p-5 sm:p-6">
+  <div class="flex flex-wrap items-center gap-4 border-b border-slate-100 pb-5">
+    {{ avatar(user, "h-20 w-20 text-3xl") }}
+    <div class="flex flex-wrap items-center gap-3">
+      <form method="post" action="{{ url_for('profile.avatar_upload') }}" enctype="multipart/form-data" class="flex flex-wrap items-center gap-3">
+        <input type="hidden" name="_csrf" value="{{ csrf_token() }}">
+        <label for="avatar" class="sr-only">Pilih foto profil</label>
+        <input id="avatar" name="avatar" type="file" accept="image/jpeg,image/png,image/webp" required
+               class="max-w-[14rem] text-xs text-slate-600 file:mr-3 file:min-h-10 file:rounded-xl file:border file:border-slate-300 file:bg-white file:px-4 file:text-sm file:font-semibold file:text-slate-700">
+        {{ btn('Ganti Foto', 'secondary') }}
+      </form>
+      {% if user.avatar %}
+      <form method="post" action="{{ url_for('profile.avatar_remove') }}">
+        <input type="hidden" name="_csrf" value="{{ csrf_token() }}">
+        {{ btn('Hapus Foto', 'danger', extra='data-confirm="Hapus foto profil?" data-confirm-text="Foto akan diganti inisial namamu." data-confirm-label="Hapus"') }}
+      </form>
+      {% endif %}
+    </div>
+    <p class="w-full text-xs text-slate-500">JPG, PNG, atau WebP. Maksimal 2 MB. Foto bersifat opsional.</p>
+  </div>
+
+  {% if edit %}
+  <form method="post" action="{{ url_for('profile.info_save') }}" novalidate class="mt-5">
+    <input type="hidden" name="_csrf" value="{{ csrf_token() }}">
+    {% set v = form if form else {} %}
+    <div class="grid gap-4 sm:grid-cols-2">
+      {{ field('name', 'Nama Lengkap', v.get('name', user.name), errors.name, extra='required maxlength="120" autocomplete="name"') }}
+      {{ field('username', 'Username', v.get('username', user.username or ''), errors.username, extra='maxlength="30" autocomplete="username"', hint='Opsional. Huruf kecil, angka, titik, atau garis bawah.') }}
+      {{ field('email', 'Alamat Email', user.email, type='email', readonly=True, hint='Email dipakai untuk login dan kode OTP, sehingga tidak dapat diubah di sini.') }}
+      {{ field('phone', 'Nomor Telepon', v.get('phone', user.phone or ''), errors.phone, type='tel', extra='inputmode="tel" autocomplete="tel"') }}
+      {{ field('birth_date', 'Tanggal Lahir (opsional)', v.get('birth_date', user.birth_date.isoformat() if user.birth_date else ''), errors.birth_date, type='date') }}
+      <div>
+        <label for="gender" class="mb-1.5 block text-sm font-semibold text-slate-700">Jenis Kelamin (opsional)</label>
+        {% set g = v.get('gender', user.gender or '') %}
+        <select id="gender" name="gender" class="w-full rounded-xl border border-slate-300 bg-white px-3.5 py-3 text-sm focus:border-brand focus:outline-none focus:ring-2 focus:ring-brand/30">
+          <option value="">Tidak ingin menyebutkan</option>
+          {% for key, label in genders.items() %}<option value="{{ key }}" {% if g == key %}selected{% endif %}>{{ label }}</option>{% endfor %}
+        </select>
+        {% if errors.gender %}<p class="mt-1 text-xs font-medium text-red-700">{{ errors.gender }}</p>{% endif %}
+      </div>
+    </div>
+    <div class="mt-6 flex gap-3">
+      {{ btn('Simpan') }}
+      <a href="{{ url_for('profile.info') }}" class="inline-flex min-h-11 items-center rounded-xl border border-slate-300 bg-white px-5 text-sm font-semibold text-slate-700 hover:bg-slate-50">Batal</a>
+    </div>
+  </form>
+  {% else %}
+  <dl class="mt-5 grid gap-x-8 gap-y-5 sm:grid-cols-2">
+    {% for label, val in [('Nama Lengkap', user.name), ('Username', user.username), ('Alamat Email', user.email), ('Nomor Telepon', user.phone),
+                          ('Tanggal Lahir', (user.birth_date | tgl) if user.birth_date else None), ('Jenis Kelamin', genders.get(user.gender))] %}
+    <div><dt class="text-xs font-semibold uppercase tracking-wide text-slate-500">{{ label }}</dt>
+    <dd class="mt-1 text-sm text-slate-900">{{ val or '—' }}</dd></div>
+    {% endfor %}
+  </dl>
+  {% endif %}
+</section>
+{% endblock %}

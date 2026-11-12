@@ -41,14 +41,14 @@
             Dashboard Admin
           </a>
           {% endif %}
-          <span class="flex max-w-[170px] items-center gap-2 whitespace-nowrap text-sm">
+          <a href="{{ url_for('profile.dashboard') }}" title="Akun saya" class="flex max-w-[170px] items-center gap-2 whitespace-nowrap rounded-xl text-sm hover:text-white">
             {% if user.avatar %}
             <img src="{{ user.avatar | media_url }}" alt="" class="h-8 w-8 rounded-full object-cover">
             {% else %}
             <span class="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-white/80 font-bold">{{ user.name[:1] | upper }}</span>
             {% endif %}
             <span class="truncate">Halo, <b>{{ user.name }}</b></span>
-          </span>
+          </a>
           <form method="post" action="{{ url_for('auth.logout') }}">
             <input type="hidden" name="_csrf" value="{{ csrf_token() }}">
             <button type="submit" class="whitespace-nowrap rounded-xl bg-white/95 px-3 py-2 text-sm font-semibold text-brand shadow-sm transition hover:bg-white">Keluar</button>
@@ -100,6 +100,7 @@
           {% endif %}
           <span class="min-w-0 truncate text-sm">Halo, <b>{{ user.name }}</b></span>
         </div>
+        <a href="{{ url_for('profile.dashboard') }}" class="mt-2 block rounded-xl bg-blue-50 px-3 py-3 text-sm font-semibold text-brand hover:bg-blue-100">Akun Saya</a>
         {% if user.role == "admin" %}
         <a href="{{ url_for('admin.dashboard') }}" class="mt-2 block rounded-xl bg-blue-50 px-3 py-3 text-sm font-semibold text-brand hover:bg-blue-100">Dashboard Admin</a>
         {% endif %}

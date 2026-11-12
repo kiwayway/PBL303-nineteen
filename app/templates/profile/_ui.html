@@ -1,0 +1,84 @@
+{# Komponen kecil untuk Profile Page. Warna mengikuti base.html: brand #2f80ed, accent #ff9a1f. #}
+{% macro icon(name, cls="h-5 w-5") %}
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" class="{{ cls }}" aria-hidden="true">
+{% if name == 'dashboard' %}<rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/>
+{% elif name == 'info' %}<circle cx="12" cy="8" r="4"/><path d="M4 21v-1a6 6 0 0 1 6-6h4a6 6 0 0 1 6 6v1"/>
+{% elif name == 'orders' %}<path d="M5 8h14l-1 13H6z"/><path d="M9 8V6a3 3 0 0 1 6 0v2"/>
+{% elif name == 'addresses' %}<path d="M12 21s7-6 7-12a7 7 0 0 0-14 0c0 6 7 12 7 12z"/><circle cx="12" cy="9" r="2.5"/>
+{% elif name == 'wishlist' %}<path d="M12 20s-8-5-8-11a4.5 4.5 0 0 1 8-2.5A4.5 4.5 0 0 1 20 9c0 6-8 11-8 11z"/>
+{% elif name == 'reviews' %}<path d="M12 3l2.8 5.8 6.2.9-4.5 4.4 1.1 6.2L12 17.3 6.4 20.3l1.1-6.2L3 9.7l6.2-.9z"/>
+{% elif name == 'security' %}<path d="M12 3l8 3v6c0 5-3.5 8-8 9-4.5-1-8-4-8-9V6z"/><path d="M9 12l2 2 4-4"/>
+{% elif name == 'logout' %}<path d="M9 4H5v16h4M16 8l4 4-4 4M20 12H9"/>
+{% elif name == 'clock' %}<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>
+{% elif name == 'check' %}<circle cx="12" cy="12" r="9"/><path d="M8 12l3 3 5-6"/>
+{% elif name == 'chevron' %}<path d="M9 6l6 6-6 6"/>
+{% endif %}
+</svg>
+{% endmacro %}
+
+{% macro nav(active, user) %}
+{% set items = [
+  ('profile.dashboard','dashboard','Dashboard'), ('profile.info','info','Informasi Pribadi'),
+  ('profile.orders','orders','Pesanan Saya'), ('profile.addresses','addresses','Alamat Saya'),
+  ('profile.wishlist','wishlist','Wishlist / Favorit'), ('profile.reviews','reviews','Ulasan Saya'),
+  ('profile.security','security','Keamanan Akun') ] %}
+<nav aria-label="Navigasi akun">
+  {% for endpoint, key, label in items %}
+  <a href="{{ url_for(endpoint) }}" {% if key == active %}aria-current="page"{% endif %}
+     class="mb-1 flex min-h-11 items-center gap-3 rounded-xl px-3 text-sm {% if key == active %}bg-blue-50 font-semibold text-[#1f5fd0]{% else %}font-medium text-slate-600 hover:bg-slate-50{% endif %}">
+    {{ icon(key) }}<span>{{ label }}</span>
+  </a>
+  {% endfor %}
+  <div class="my-3 border-t border-slate-200"></div>
+  <form method="post" action="{{ url_for('auth.logout') }}">
+    <input type="hidden" name="_csrf" value="{{ csrf_token() }}">
+    <button type="submit" data-confirm="Keluar dari akun?" data-confirm-text="Kamu perlu masuk lagi untuk mengakses akunmu." data-confirm-label="Logout"
+            class="flex min-h-11 w-full items-center gap-3 rounded-xl px-3 text-sm font-medium text-red-700 hover:bg-red-50">
+      {{ icon('logout') }}<span>Logout</span>
+    </button>
+  </form>
+</nav>
+{% endmacro %}
+
+{% macro avatar(user, cls="h-20 w-20 text-2xl") %}
+{% if user.avatar %}<img src="{{ user.avatar | media_url }}" alt="Foto profil {{ user.name }}" class="{{ cls }} rounded-full object-cover">
+{% else %}<span class="{{ cls }} grid shrink-0 place-items-center rounded-full bg-blue-100 font-bold text-[#1f5fd0]" aria-hidden="true">{{ user.name[:1] | upper }}</span>{% endif %}
+{% endmacro %}
+
+{% macro badge(state, label) %}
+{% set tone = {'pending':'bg-orange-100 text-orange-800','processing':'bg-blue-100 text-blue-800','done':'bg-emerald-100 text-emerald-800','cancelled':'bg-slate-100 text-slate-700'} %}
+<span class="inline-flex whitespace-nowrap rounded-full px-3 py-1 text-xs font-semibold {{ tone.get(state, 'bg-slate-100 text-slate-700') }}">{{ label }}</span>
+{% endmacro %}
+
+{% macro stars(n) %}
+<span class="whitespace-nowrap text-base tracking-wider text-accent" role="img" aria-label="Rating {{ n }} dari 5">{{ '★' * n }}<span class="text-slate-300">{{ '★' * (5 - n) }}</span></span>
+{% endmacro %}
+
+{% macro thumb(image, cls="h-16 w-20") %}
+{% if image %}<img src="{{ image | media_url }}" alt="" loading="lazy" class="{{ cls }} shrink-0 rounded-xl bg-slate-100 object-cover">
+{% else %}<span class="{{ cls }} grid shrink-0 place-items-center rounded-xl bg-blue-50 text-brand">{{ icon('orders', 'h-7 w-7') }}</span>{% endif %}
+{% endmacro %}
+
+{% macro empty(title, text, href=None, cta=None) %}
+<div class="rounded-2xl border border-dashed border-slate-300 bg-white px-6 py-12 text-center">
+  <p class="text-base font-semibold text-slate-800">{{ title }}</p>
+  <p class="mx-auto mt-1 max-w-sm text-sm text-slate-600">{{ text }}</p>
+  {% if href %}<a href="{{ href }}" class="mt-5 inline-flex min-h-11 items-center rounded-xl bg-brand px-5 text-sm font-semibold text-white hover:bg-[#1f5fd0]">{{ cta }}</a>{% endif %}
+</div>
+{% endmacro %}
+
+{% macro field(id, label, value="", error=None, type="text", extra="", readonly=False, hint=None) %}
+<div>
+  <label for="{{ id }}" class="mb-1.5 block text-sm font-semibold text-slate-700">{{ label }}</label>
+  <input id="{{ id }}" name="{{ id }}" type="{{ type }}" value="{{ value if value is not none else '' }}" {{ extra|safe }}
+         {% if readonly %}readonly aria-readonly="true"{% endif %}
+         {% if error %}aria-invalid="true" aria-describedby="{{ id }}-err"{% elif hint %}aria-describedby="{{ id }}-hint"{% endif %}
+         class="w-full rounded-xl border px-3.5 py-3 text-sm focus:border-brand focus:outline-none focus:ring-2 focus:ring-brand/30 {% if error %}border-red-500{% elif readonly %}border-slate-200 bg-slate-50 text-slate-600{% else %}border-slate-300 bg-white{% endif %}">
+  {% if error %}<p id="{{ id }}-err" class="mt-1 text-xs font-medium text-red-700">{{ error }}</p>
+  {% elif hint %}<p id="{{ id }}-hint" class="mt-1 text-xs text-slate-500">{{ hint }}</p>{% endif %}
+</div>
+{% endmacro %}
+
+{% macro btn(label, kind="primary", type="submit", extra="") %}
+<button type="{{ type }}" {{ extra|safe }} class="inline-flex min-h-11 items-center justify-center rounded-xl px-5 text-sm font-semibold transition {% if kind == 'primary' %}bg-brand text-white hover:bg-[#1f5fd0]{% elif kind == 'danger' %}border border-red-300 bg-white text-red-700 hover:bg-red-50{% else %}border border-slate-300 bg-white text-slate-700 hover:bg-slate-50{% endif %}">{{ label }}</button>
+{% endmacro %}
