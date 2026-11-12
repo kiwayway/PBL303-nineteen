@@ -1,0 +1,39 @@
+{% extends "profile/_layout.html" %}
+{% from "profile/_ui.html" import thumb, empty, stars %}
+{% set active = 'wishlist' %}
+{% block content %}
+<h1 class="text-2xl font-bold text-slate-900">Wishlist / Favorit</h1>
+<p class="mt-1 text-sm text-slate-600">Jasa yang kamu simpan untuk dilihat atau dipesan nanti.</p>
+
+{% if rows %}
+<ul class="mt-5 grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+  {% for w in rows %}
+  <li class="flex flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white {{ '' if w.available else 'opacity-80' }}">
+    {% if w.service.image %}<img src="{{ w.service.image | media_url }}" alt="" loading="lazy" class="h-36 w-full object-cover {{ '' if w.available else 'grayscale' }}">
+    {% else %}<div class="grid h-36 w-full place-items-center bg-blue-50 text-brand">{{ thumb(None, 'h-14 w-14 bg-transparent') }}</div>{% endif %}
+    <div class="flex flex-1 flex-col p-4">
+      <p class="text-xs font-medium text-slate-500">{{ w.service.category.name }}</p>
+      <h2 class="mt-0.5 font-semibold text-slate-900">{{ w.service.title }}</h2>
+      <p class="mt-1 text-sm text-slate-700">
+        {% if w.available %}Mulai <b>{{ w.price | rupiah }}</b>{% else %}<b class="text-orange-800">Layanan tidak tersedia</b>{% endif %}
+        {% if w.rating %}<span class="ml-2 text-xs text-slate-600">★ {{ w.rating }}</span>{% endif %}
+      </p>
+      <div class="mt-auto flex gap-2 pt-4">
+        {% if w.available %}
+        <a href="{{ url_for('catalog.list_services') }}" class="inline-flex min-h-10 flex-1 items-center justify-center rounded-xl bg-brand px-4 text-sm font-semibold text-white hover:bg-[#1f5fd0]">Lihat Layanan</a>
+        {% else %}
+        <span aria-disabled="true" class="inline-flex min-h-10 flex-1 cursor-not-allowed items-center justify-center rounded-xl bg-slate-100 px-4 text-sm font-semibold text-slate-500">Pesan</span>
+        {% endif %}
+        <form method="post" action="{{ url_for('profile.wishlist_remove', service_id=w.service.id) }}">
+          <input type="hidden" name="_csrf" value="{{ csrf_token() }}">
+          <button type="submit" class="inline-flex min-h-10 items-center rounded-xl border border-red-300 px-4 text-sm font-semibold text-red-700 hover:bg-red-50" aria-label="Hapus {{ w.service.title }} dari wishlist">Hapus</button>
+        </form>
+      </div>
+    </div>
+  </li>
+  {% endfor %}
+</ul>
+{% else %}
+<div class="mt-5">{{ empty('Wishlist masih kosong', 'Simpan jasa yang kamu suka agar mudah ditemukan lagi.', url_for('catalog.list_services'), 'Jelajahi Jasa') }}</div>
+{% endif %}
+{% endblock %}

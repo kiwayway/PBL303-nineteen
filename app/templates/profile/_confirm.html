@@ -1,0 +1,29 @@
+<dialog id="confirmDialog" aria-labelledby="confirmTitle" class="w-[min(92vw,26rem)] rounded-2xl border border-slate-200 p-0 shadow-xl backdrop:bg-slate-900/50">
+  <div class="p-6">
+    <h2 id="confirmTitle" class="text-lg font-bold text-slate-900"></h2>
+    <p id="confirmText" class="mt-2 text-sm text-slate-600"></p>
+    <div class="mt-6 flex justify-end gap-3">
+      <button type="button" id="confirmCancel" class="min-h-11 rounded-xl border border-slate-300 px-5 text-sm font-semibold text-slate-700 hover:bg-slate-50">Batal</button>
+      <button type="button" id="confirmOk" class="min-h-11 rounded-xl bg-brand px-5 text-sm font-semibold text-white hover:bg-[#1f5fd0]"></button>
+    </div>
+  </div>
+</dialog>
+<script>
+(() => {
+  const d = document.getElementById('confirmDialog');
+  if (!d || typeof d.showModal !== 'function') return;  // tanpa dukungan dialog: form langsung terkirim
+  let form = null;
+  document.addEventListener('click', e => {
+    const b = e.target.closest('[data-confirm]');
+    if (!b) return;
+    e.preventDefault();
+    form = b.closest('form');
+    document.getElementById('confirmTitle').textContent = b.dataset.confirm;
+    document.getElementById('confirmText').textContent = b.dataset.confirmText || '';
+    document.getElementById('confirmOk').textContent = b.dataset.confirmLabel || 'Ya, lanjutkan';
+    d.showModal();
+  });
+  document.getElementById('confirmCancel').addEventListener('click', () => d.close());
+  document.getElementById('confirmOk').addEventListener('click', () => { d.close(); if (form) form.submit(); });
+})();
+</script>

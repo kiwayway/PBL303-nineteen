@@ -37,11 +37,15 @@ def create_app(test_config=None):
             "Isi di .env, contoh: python -c \"import secrets; print(secrets.token_urlsafe(48))\""
         )
 
-    db_url = os.environ.get("DATABASE_URL", "")
-    if not db_url:
-        if not testing:
+    if testing:
+        db_url = (test_config or {}).get(
+            "SQLALCHEMY_DATABASE_URI",
+            "sqlite:///:memory:",
+        )
+    else:
+        db_url = os.environ.get("DATABASE_URL", "")
+        if not db_url:
             raise RuntimeError("DATABASE_URL belum diatur.")
-        db_url = "sqlite:///:memory:"
 
     app = Flask(__name__)
     app.config.update(
@@ -94,11 +98,13 @@ def create_app(test_config=None):
     from .auth.routes import csrf_token
     from .catalog import bp as catalog_bp
     from .main import bp as main_bp
+    from .profile import bp as profile_bp
 
     app.register_blueprint(main_bp)
     app.register_blueprint(admin_bp)
     app.register_blueprint(auth_bp)
     app.register_blueprint(catalog_bp)
+    app.register_blueprint(profile_bp)
     app.jinja_env.globals["csrf_token"] = csrf_token
     app.jinja_env.globals["google_enabled"] = google_enabled
 

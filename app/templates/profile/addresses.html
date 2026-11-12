@@ -1,0 +1,72 @@
+{% extends "profile/_layout.html" %}
+{% from "profile/_ui.html" import field, btn, empty, icon %}
+{% set active = 'addresses' %}
+{% block content %}
+<div class="flex flex-wrap items-end justify-between gap-3">
+  <div><h1 class="text-2xl font-bold text-slate-900">Alamat Saya</h1>
+  <p class="mt-1 text-sm text-slate-600">Alamat untuk layanan yang membutuhkan lokasi. Tidak wajib untuk layanan lain.</p></div>
+  {% if can_add and not adding and not editing %}<a href="{{ url_for('profile.addresses', baru=1) }}" class="inline-flex min-h-11 items-center rounded-xl bg-brand px-5 text-sm font-semibold text-white hover:bg-[#1f5fd0]">+ Tambah Alamat</a>{% endif %}
+</div>
+
+{% if rows and not has_primary %}
+<p role="status" class="mt-4 rounded-xl border border-orange-200 bg-orange-50 px-4 py-3 text-sm font-medium text-orange-900">Belum ada alamat utama. Pilih salah satu alamat sebagai alamat utama.</p>
+{% endif %}
+
+{% if adding or editing %}
+<section class="mt-5 rounded-2xl border border-slate-200 bg-white p-5 sm:p-6" aria-labelledby="form-alamat">
+  <h2 id="form-alamat" class="font-bold text-slate-900">{{ 'Edit Alamat' if editing else 'Alamat Baru' }}</h2>
+  <form method="post" action="{{ url_for('profile.address_update', address_id=editing.id) if editing else url_for('profile.address_create') }}" novalidate class="mt-4">
+    <input type="hidden" name="_csrf" value="{{ csrf_token() }}">
+    <div class="grid gap-4 sm:grid-cols-2">
+      <div>
+        <label for="label" class="mb-1.5 block text-sm font-semibold text-slate-700">Label Alamat</label>
+        <select id="label" name="label" required class="w-full rounded-xl border px-3.5 py-3 text-sm focus:border-brand focus:outline-none focus:ring-2 focus:ring-brand/30 {{ 'border-red-500' if errors.label else 'border-slate-300' }}">
+          {% for l in labels %}<option value="{{ l }}" {% if form.get('label', 'Rumah') == l %}selected{% endif %}>{{ l }}</option>{% endfor %}
+        </select>
+        {% if errors.label %}<p class="mt-1 text-xs font-medium text-red-700">{{ errors.label }}</p>{% endif %}
+      </div>
+      {{ field('recipient_name', 'Nama Penerima', form.get('recipient_name', ''), errors.recipient_name, extra='required maxlength="120"') }}
+      {{ field('phone', 'Nomor Telepon', form.get('phone', ''), errors.phone, type='tel', extra='required inputmode="tel"') }}
+      <div class="sm:col-span-2">
+        <label for="full_address" class="mb-1.5 block text-sm font-semibold text-slate-700">Alamat Lengkap</label>
+        <textarea id="full_address" name="full_address" rows="3" required maxlength="500" {% if errors.full_address %}aria-invalid="true" aria-describedby="full_address-err"{% endif %}
+          class="w-full rounded-xl border px-3.5 py-3 text-sm focus:border-brand focus:outline-none focus:ring-2 focus:ring-brand/30 {{ 'border-red-500' if errors.full_address else 'border-slate-300' }}">{{ form.get('full_address', '') }}</textarea>
+        {% if errors.full_address %}<p id="full_address-err" class="mt-1 text-xs font-medium text-red-700">{{ errors.full_address }}</p>{% endif %}
+      </div>
+      <div class="sm:col-span-2">{{ field('notes', 'Detail Tambahan (opsional)', form.get('notes', '') or '', errors.notes, extra='maxlength="255"', hint='Patokan atau instruksi lokasi.') }}</div>
+    </div>
+    <label class="mt-4 flex items-center gap-2 text-sm text-slate-700">
+      <input type="checkbox" name="is_primary" value="1" class="h-4 w-4 rounded border-slate-300 text-brand focus:ring-brand" {% if form.get('is_primary') %}checked{% endif %}> Jadikan alamat utama
+    </label>
+    <div class="mt-5 flex gap-3">{{ btn('Simpan') }}<a href="{{ url_for('profile.addresses') }}" class="inline-flex min-h-11 items-center rounded-xl border border-slate-300 bg-white px-5 text-sm font-semibold text-slate-700 hover:bg-slate-50">Batal</a></div>
+  </form>
+</section>
+{% endif %}
+
+<div class="mt-5 grid gap-4 md:grid-cols-2">
+  {% for a in rows %}
+  <article class="flex flex-col rounded-2xl border bg-white p-5 {{ 'border-brand/60' if a.is_primary else 'border-slate-200' }}">
+    <div class="flex items-center justify-between gap-2">
+      <div class="flex items-center gap-2"><span class="text-brand">{{ icon('addresses') }}</span><h2 class="font-bold text-slate-900">{{ a.label }}</h2>
+        {% if a.is_primary %}<span class="rounded-full bg-blue-100 px-2.5 py-0.5 text-xs font-semibold text-blue-800">Alamat Utama</span>{% endif %}</div>
+    </div>
+    <p class="mt-3 text-sm font-semibold text-slate-900">{{ a.recipient_name }} <span class="font-normal text-slate-600">· {{ a.phone }}</span></p>
+    <p class="mt-1 whitespace-pre-line text-sm text-slate-700">{{ a.full_address }}</p>
+    {% if a.notes %}<p class="mt-1 text-xs text-slate-500">{{ a.notes }}</p>{% endif %}
+    <div class="mt-4 flex flex-wrap gap-2 pt-1">
+      <a href="{{ url_for('profile.addresses', edit=a.id) }}" class="inline-flex min-h-10 items-center rounded-xl border border-slate-300 px-4 text-sm font-semibold text-slate-700 hover:bg-slate-50">Edit</a>
+      {% if not a.is_primary %}
+      <form method="post" action="{{ url_for('profile.address_primary', address_id=a.id) }}"><input type="hidden" name="_csrf" value="{{ csrf_token() }}">
+        <button class="inline-flex min-h-10 items-center rounded-xl border border-slate-300 px-4 text-sm font-semibold text-[#1f5fd0] hover:bg-blue-50">Jadikan Utama</button></form>
+      {% endif %}
+      <form method="post" action="{{ url_for('profile.address_delete', address_id=a.id) }}"><input type="hidden" name="_csrf" value="{{ csrf_token() }}">
+        <button data-confirm="Hapus alamat {{ a.label }}?" data-confirm-text="Alamat yang dihapus tidak dapat dikembalikan." data-confirm-label="Hapus" class="inline-flex min-h-10 items-center rounded-xl border border-red-300 px-4 text-sm font-semibold text-red-700 hover:bg-red-50">Hapus</button></form>
+    </div>
+  </article>
+  {% endfor %}
+</div>
+{% if not rows and not adding %}
+<div class="mt-5">{{ empty('Belum ada alamat tersimpan', 'Tambahkan alamat agar lebih cepat saat memesan layanan yang butuh lokasi.', url_for('profile.addresses', baru=1), '+ Tambah Alamat') }}</div>
+{% endif %}
+{% if not can_add %}<p class="mt-4 text-xs text-slate-500">Batas maksimal alamat tersimpan sudah tercapai.</p>{% endif %}
+{% endblock %}

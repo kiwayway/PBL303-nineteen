@@ -1,0 +1,73 @@
+{% extends "profile/_layout.html" %}
+{% from "profile/_ui.html" import thumb, stars, empty, btn %}
+{% set active = 'reviews' %}
+{% block content %}
+<h1 class="text-2xl font-bold text-slate-900">Ulasan Saya</h1>
+<p class="mt-1 text-sm text-slate-600">Ulasan untuk layanan yang sudah kamu gunakan.</p>
+
+{% if form_item %}
+{% set svc = form_item.package.service %}
+<section class="mt-5 rounded-2xl border border-slate-200 bg-white p-5 sm:p-6" aria-labelledby="form-ulasan">
+  <h2 id="form-ulasan" class="font-bold text-slate-900">{{ 'Edit ulasan' if form_item.review else 'Beri ulasan' }}: {{ svc.title }}</h2>
+  <form method="post" action="{{ url_for('profile.review_save', item_id=form_item.id) }}" novalidate class="mt-4">
+    <input type="hidden" name="_csrf" value="{{ csrf_token() }}">
+    <fieldset>
+      <legend class="mb-2 text-sm font-semibold text-slate-700">Rating</legend>
+      <div class="flex flex-wrap gap-2">
+        {% for n in range(1, 6) %}
+        <label class="cursor-pointer"><input type="radio" name="rating" value="{{ n }}" class="peer sr-only" {% if (form.get('rating') | string) == (n | string) %}checked{% endif %}>
+          <span class="inline-flex min-h-11 items-center rounded-xl border border-slate-300 bg-white px-4 text-sm font-semibold text-slate-700 peer-checked:border-brand peer-checked:bg-blue-50 peer-checked:text-[#1f5fd0] peer-focus-visible:ring-2 peer-focus-visible:ring-brand">{{ n }} ★</span></label>
+        {% endfor %}
+      </div>
+      {% if errors.rating %}<p class="mt-1 text-xs font-medium text-red-700">{{ errors.rating }}</p>{% endif %}
+    </fieldset>
+    <div class="mt-4">
+      <label for="comment" class="mb-1.5 block text-sm font-semibold text-slate-700">Komentar (opsional)</label>
+      <textarea id="comment" name="comment" rows="4" maxlength="2000" class="w-full rounded-xl border border-slate-300 px-3.5 py-3 text-sm focus:border-brand focus:outline-none focus:ring-2 focus:ring-brand/30">{{ form.get('comment', '') }}</textarea>
+      {% if errors.comment %}<p class="mt-1 text-xs font-medium text-red-700">{{ errors.comment }}</p>{% endif %}
+    </div>
+    <div class="mt-5 flex gap-3">{{ btn('Simpan Ulasan') }}<a href="{{ url_for('profile.reviews') }}" class="inline-flex min-h-11 items-center rounded-xl border border-slate-300 bg-white px-5 text-sm font-semibold text-slate-700 hover:bg-slate-50">Batal</a></div>
+  </form>
+</section>
+{% endif %}
+
+{% if pending %}
+<section class="mt-5 rounded-2xl border border-slate-200 bg-white p-5" aria-labelledby="belum">
+  <h2 id="belum" class="font-bold text-slate-900">Menunggu ulasan</h2>
+  <ul class="mt-2 divide-y divide-slate-100">
+    {% for it in pending %}
+    <li class="flex items-center gap-4 py-3">
+      {{ thumb(it.package.service.image) }}
+      <div class="min-w-0 flex-1"><p class="truncate font-semibold text-slate-900">{{ it.package.service.title }}</p><p class="truncate text-xs text-slate-600">oleh {{ it.seller.name }} · pesanan selesai</p></div>
+      <a href="{{ url_for('profile.reviews', item=it.id) }}" class="inline-flex min-h-10 items-center rounded-xl bg-brand px-4 text-sm font-semibold text-white hover:bg-[#1f5fd0]">Beri Ulasan</a>
+    </li>
+    {% endfor %}
+  </ul>
+</section>
+{% endif %}
+
+<div class="mt-5 space-y-3">
+  {% for r in mine %}
+  {% set svc = r.order_item.package.service %}
+  <article class="rounded-2xl border border-slate-200 bg-white p-5">
+    <div class="flex items-start gap-4">
+      {{ thumb(svc.image) }}
+      <div class="min-w-0 flex-1">
+        <h2 class="truncate font-semibold text-slate-900">{{ svc.title }}</h2>
+        <p class="text-xs text-slate-600">oleh {{ r.order_item.seller.name }} · {{ r.created_at | tgl }}</p>
+        <p class="mt-1">{{ stars(r.rating) }}</p>
+        {% if r.comment %}<p class="mt-2 whitespace-pre-line text-sm text-slate-800">{{ r.comment }}</p>{% endif %}
+      </div>
+    </div>
+    <div class="mt-4 flex flex-wrap justify-end gap-2">
+      <a href="{{ url_for('profile.reviews', item=r.order_item_id) }}" class="inline-flex min-h-10 items-center rounded-xl border border-slate-300 px-4 text-sm font-semibold text-slate-700 hover:bg-slate-50">Edit</a>
+      <form method="post" action="{{ url_for('profile.review_delete', item_id=r.order_item_id) }}"><input type="hidden" name="_csrf" value="{{ csrf_token() }}">
+        <button data-confirm="Hapus ulasan ini?" data-confirm-text="Ulasan yang dihapus tidak dapat dikembalikan." data-confirm-label="Hapus" class="inline-flex min-h-10 items-center rounded-xl border border-red-300 px-4 text-sm font-semibold text-red-700 hover:bg-red-50">Hapus</button></form>
+    </div>
+  </article>
+  {% endfor %}
+</div>
+{% if not mine and not pending and not form_item %}
+<div class="mt-5">{{ empty('Belum ada ulasan', 'Setelah pesananmu selesai, kamu bisa memberi ulasan di sini.', url_for('profile.orders', status='done'), 'Lihat pesanan selesai') }}</div>
+{% endif %}
+{% endblock %}

@@ -14,7 +14,10 @@ def client(monkeypatch):
         "app.auth.routes.send_otp_email",
         lambda email, code, purpose: sent.update(code=code, email=email, purpose=purpose),
     )
-    app = create_app({"TESTING": True})
+    app = create_app({
+    "TESTING": True,
+    "SQLALCHEMY_DATABASE_URI": "sqlite:///:memory:",
+    })
     c = app.test_client()
     c.sent = sent
     c.app = app

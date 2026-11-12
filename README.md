@@ -70,6 +70,16 @@ Halaman: `/register`, `/verify` (OTP email), `/login`, `/forgot-password`, `/res
 - Untuk mengaktifkan email Contact Us, isi `MAIL_SERVER`, `MAIL_PORT`, `MAIL_USE_TLS`, `MAIL_USERNAME`, dan `MAIL_PASSWORD` di `.env` dengan kredensial SMTP pengirim (untuk Gmail gunakan App Password). `CONTACT_EMAIL` adalah alamat penerima. Jika SMTP gagal, pesan tetap tersimpan di database.
 - Daftar/masuk dengan Google: lihat bagian "Login dengan Google" di bawah. Tombol otomatis nonaktif jika `GOOGLE_CLIENT_ID`/`GOOGLE_CLIENT_SECRET` kosong.
 
+## Profile Page Customer
+Halaman akun customer ada di `/akun/` (wajib login; tautan "Halo, <nama>" di navbar membukanya). Menu: Dashboard, Informasi Pribadi (`/akun/profil`), Pesanan Saya (`/akun/pesanan`, detail `/akun/pesanan/<id>`), Alamat Saya (`/akun/alamat`), Wishlist / Favorit (`/akun/wishlist`), Ulasan Saya (`/akun/ulasan`), Keamanan Akun (`/akun/keamanan`), dan Logout (memakai `POST /logout` yang sudah ada). Menu Notifikasi tidak dipakai.
+- Migrasi `0006` menambah kolom `users.username`, `users.birth_date`, `users.gender` serta tabel `addresses` dan `wishlist_items` (jalan otomatis saat `docker compose up`).
+- **Ganti password wajib lewat OTP email.** Tombol "Kirim Kode OTP" di Keamanan Akun memakai alur yang sama dengan lupa password: `/verify` (kode 6 digit, berlaku 10 menit, maksimal 5 percobaan, jeda kirim ulang 60 detik) lalu `/reset-password`. `/reset-password` menolak akses tanpa OTP yang sudah terverifikasi. Setelah berhasil, sesi dibersihkan dan customer masuk ulang.
+- Email tidak bisa diubah dari Informasi Pribadi (dipakai untuk login dan OTP). Foto profil: JPG/PNG/WebP maksimal 2 MB, diproses ulang dan disimpan di `app/static/uploads/avatars/` (folder `uploads/` sudah di-ignore git).
+- Status pesanan di UI dipetakan dari data yang ada: `pending`/`waiting` = Menunggu Pembayaran, `approved` dengan semua item belum selesai = Diproses, semua item `completed` = Selesai, `rejected` = Dibatalkan.
+- Ulasan hanya untuk item pesanan milik sendiri yang sudah dibayar (`approved`) dan `completed`; satu ulasan per item (menyimpan ulang berarti mengedit).
+- Semua form `POST` memakai token CSRF, data selalu dibatasi ke `user_id` yang login (akses data orang lain = 404).
+- Event audit baru: `profile_update`, `avatar_update`, `avatar_remove`, `password_change_requested`, `address_create`, `address_update`, `address_primary`, `address_delete`, `wishlist_add`, `wishlist_remove`, `review_create`, `review_update`, `review_delete`. Alur OTP dan `password_reset` memakai event yang sudah ada.
+
 ## Login dengan Google
 Route: `GET /auth/google` (mulai) dan `GET /auth/google/callback`. Alur OpenID Connect Authorization Code + PKCE, dengan `state` dan `nonce` sekali pakai di sesi. Tanda tangan ID token (RS256) diverifikasi dengan kunci publik Google (PyJWT + JWKS); algoritma lain ditolak. Panduan dev/staging/produksi, rotasi secret, dan uji manual: [`docs/GOOGLE-OAUTH.md`](docs/GOOGLE-OAUTH.md).
 

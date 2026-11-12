@@ -46,6 +46,17 @@ class User(db.Model):
     focus = db.Column(db.String(255))
     location = db.Column(db.String(120))
 
+    # profil customer (Profile Page /akun)
+    username = db.Column(db.String(30), unique=True, nullable=True, index=True)
+    birth_date = db.Column(db.Date)
+    gender = db.Column(db.String(10))  # 'male' / 'female' / NULL
+
+    addresses = db.relationship(
+        "Address", backref="user", cascade="all, delete-orphan", order_by="Address.id"
+    )
+    wishlist_items = db.relationship(
+        "WishlistItem", backref="user", cascade="all, delete-orphan"
+    )
     experiences = db.relationship("Experience", backref="seller", cascade="all, delete-orphan")
     certificates = db.relationship("Certificate", backref="seller", cascade="all, delete-orphan")
     projects = db.relationship("Project", backref="seller", cascade="all, delete-orphan")
@@ -337,6 +348,40 @@ class Review(db.Model):
     created_at = db.Column(db.DateTime(timezone=True), nullable=False, default=utcnow)
 
     customer = db.relationship("User")
+
+
+class Address(db.Model):
+    """Alamat tersimpan customer. Maksimal satu alamat utama per user (dijaga di route)."""
+
+    __tablename__ = "addresses"
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(
+        db.Integer, db.ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True
+    )
+    label = db.Column(db.String(20), nullable=False)  # Rumah / Kantor / Lainnya
+    recipient_name = db.Column(db.String(120), nullable=False)
+    phone = db.Column(db.String(20), nullable=False)
+    full_address = db.Column(db.Text, nullable=False)
+    notes = db.Column(db.String(255))  # patokan / instruksi lokasi
+    is_primary = db.Column(db.Boolean, nullable=False, default=False, server_default=db.false())
+    created_at = db.Column(db.DateTime(timezone=True), nullable=False, default=utcnow)
+
+
+class WishlistItem(db.Model):
+    """Jasa yang disimpan customer ke Wishlist / Favorit."""
+
+    __tablename__ = "wishlist_items"
+    __table_args__ = (db.UniqueConstraint("user_id", "service_id", name="uq_wishlist_user_service"),)
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(
+        db.Integer, db.ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True
+    )
+    service_id = db.Column(
+        db.Integer, db.ForeignKey("services.id", ondelete="CASCADE"), nullable=False, index=True
+    )
+    created_at = db.Column(db.DateTime(timezone=True), nullable=False, default=utcnow)
+
+    service = db.relationship("Service")
 
 
 class ContactInquiry(db.Model):

@@ -196,7 +196,13 @@ def test_buttons_active_when_configured(ctx):
 
 
 def test_buttons_disabled_when_not_configured():
-    app = create_app({"TESTING": True})
+    app = create_app({
+        "TESTING": True,
+        "SQLALCHEMY_DATABASE_URI": "sqlite:///:memory:",
+        "GOOGLE_CLIENT_ID": "",
+        "GOOGLE_CLIENT_SECRET": "",
+        "GOOGLE_REDIRECT_URI": "",
+    })
     c = app.test_client()
     html = c.get("/login").get_data(as_text=True)
     assert 'href="/auth/google"' not in html and "belum tersedia" in html
