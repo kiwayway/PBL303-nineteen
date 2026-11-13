@@ -35,6 +35,8 @@
       <!-- Area akun selalu di sebelah kanan search -->
       <div class="flex shrink-0 items-center gap-3">
         {% if user %}
+          {% if user.role == "customer" %}<a href="{{ url_for('commerce.cart') }}" class="whitespace-nowrap rounded-xl bg-white/90 px-3 py-2 text-sm font-semibold text-brand">Keranjang</a>{% endif %}
+          {% if user.role == "seller" %}<a href="{{ url_for('commerce.seller_orders') }}" class="whitespace-nowrap rounded-xl bg-white/90 px-3 py-2 text-sm font-semibold text-brand">Pesanan Seller</a><a href="{{ url_for('commerce.seller_services') }}" class="whitespace-nowrap rounded-xl bg-white/90 px-3 py-2 text-sm font-semibold text-brand">Jasa Saya</a>{% endif %}
           {% if user.role == "admin" %}
           <a href="{{ url_for('admin.dashboard') }}"
              class="whitespace-nowrap rounded-xl bg-white/95 px-3 py-2 text-sm font-semibold text-brand shadow-sm transition hover:bg-white">

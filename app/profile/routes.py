@@ -86,7 +86,7 @@ def _order_view(order):
     for it in order.items:
         svc = it.package.service
         items.append({
-            "item": it, "title": svc.title, "image": svc.image, "service_id": svc.id,
+            "item": it, "title": it.service_title or svc.title, "image": svc.image, "service_id": svc.id,
             "service_active": svc.is_active and bool(svc.seller and svc.seller.is_active),
             "seller": it.seller.name if it.seller else "-", "package": it.package.name,
             "duration": it.package.duration_days, "price": it.price,
