@@ -290,6 +290,7 @@ class Order(db.Model):
     total = db.Column(db.Integer, nullable=False, default=0)
     proof_path = db.Column(db.String(255))
     note = db.Column(db.String(255))  # alasan ditolak
+    customer_note = db.Column(db.String(255))
     created_at = db.Column(db.DateTime(timezone=True), nullable=False, default=utcnow)
 
     customer = db.relationship("User")
@@ -308,6 +309,9 @@ class OrderItem(db.Model):
     package_id = db.Column(db.ForeignKey("service_packages.id"), nullable=False, index=True)
     seller_id = db.Column(db.ForeignKey("users.id"), nullable=False, index=True)  # snapshot
     price = db.Column(db.Integer, nullable=False)  # snapshot harga saat checkout
+    service_title = db.Column(db.String(160))
+    package_name = db.Column(db.String(80))
+    duration_days = db.Column(db.Integer)
     status = db.Column(db.String(11), nullable=False, default="in_progress", server_default="in_progress")
     completed_at = db.Column(db.DateTime(timezone=True))
 

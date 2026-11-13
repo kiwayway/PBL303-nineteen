@@ -149,6 +149,16 @@ def _png_upload(color=(30, 120, 220)):
     stream.seek(0)
     return stream
 
+def _image_upload(image_format="PNG"):
+    from io import BytesIO
+    from PIL import Image
+
+    stream = BytesIO()
+    Image.new("RGB", (32, 32), (50, 120, 200)).save(
+        stream, format=image_format
+    )
+    stream.seek(0)
+    return stream
 
 def test_admin_can_upload_category_logo_and_background(app):
     admin = make_user("admin")
@@ -204,3 +214,141 @@ def test_admin_can_replace_and_remove_category_images(app):
         "_csrf": token, "remove_logo_image": "1",
     })
     assert db.session.get(Category, category.id).logo_image is None
+
+
+def _valid_service_form_data(admin_client, category, seller):
+    return {
+        "_csrf": csrf(admin_client, "/admin/services/new"),
+        "title": "Jasa desain logo profesional",
+        "description": "Layanan desain logo profesional sesuai kebutuhan pelanggan.",
+        "category_id": str(category.id),
+        "seller_id": str(seller.id),
+        "package_name": "Paket Basic",
+        "price": "150000",
+        "duration_days": "3",
+        "is_active": "1",
+    }
+
+
+def test_admin_can_upload_valid_service_image(app):
+    from app.models import Service
+
+    admin = make_user("admin")
+    seller = make_user("seller")
+    category = Category(name="Desain")
+    db.session.add(category)
+    db.session.commit()
+
+    client = logged_client(app, admin)
+    data = _valid_service_form_data(client, category, seller)
+    data["image"] = (_image_upload("PNG"), "logo.png", "image/png")
+
+    response = client.post(
+        "/admin/services/new",
+        data=data,
+        content_type="multipart/form-data",
+    )
+
+    assert response.status_code == 302
+
+    service = Service.query.one()
+    assert service.image.startswith("uploads/services/")
+    assert service.image.endswith(".png")
+
+    from pathlib import Path
+    saved = Path(app.static_folder) / service.image
+    assert saved.is_file()
+
+
+def test_admin_rejects_fake_service_image(app):
+    from io import BytesIO
+    from app.models import Service
+
+    admin = make_user("admin")
+    seller = make_user("seller")
+    category = Category(name="Desain")
+    db.session.add(category)
+    db.session.commit()
+
+    client = logged_client(app, admin)
+    data = _valid_service_form_data(client, category, seller)
+    data["image"] = (
+        BytesIO(b"<script>alert('xss')</script>"),
+        "fake.png",
+        "image/png",
+    )
+
+    response = client.post(
+        "/admin/services/new",
+        data=data,
+        content_type="multipart/form-data",
+        follow_redirects=True,
+    )
+
+    assert response.status_code == 200
+    assert Service.query.count() == 0
+    assert "File gambar rusak atau tidak valid" in response.get_data(as_text=True)
+
+
+def test_admin_rejects_svg_service_image(app):
+    from io import BytesIO
+    from app.models import Service
+
+    admin = make_user("admin")
+    seller = make_user("seller")
+    category = Category(name="Desain")
+    db.session.add(category)
+    db.session.commit()
+
+    client = logged_client(app, admin)
+    data = _valid_service_form_data(client, category, seller)
+    data["image"] = (
+        BytesIO(b'<svg xmlns="http://www.w3.org/2000/svg"></svg>'),
+        "image.svg",
+        "image/svg+xml",
+    )
+
+    response = client.post(
+        "/admin/services/new",
+        data=data,
+        content_type="multipart/form-data",
+        follow_redirects=True,
+    )
+
+    assert response.status_code == 200
+    assert Service.query.count() == 0
+    html = response.get_data(as_text=True)
+    assert (
+        "File gambar rusak atau tidak valid" in html
+        or "Gunakan gambar PNG, JPEG, atau WebP" in html
+    )
+
+
+def test_admin_rejects_oversized_service_image(app):
+    from io import BytesIO
+    from app.models import Service
+
+    admin = make_user("admin")
+    seller = make_user("seller")
+    category = Category(name="Desain")
+    db.session.add(category)
+    db.session.commit()
+
+    client = logged_client(app, admin)
+    data = _valid_service_form_data(client, category, seller)
+    data["image"] = (
+        BytesIO(b"A" * (4 * 1024 * 1024 + 1)),
+        "large.png",
+        "image/png",
+    )
+
+    response = client.post(
+        "/admin/services/new",
+        data=data,
+        content_type="multipart/form-data",
+        follow_redirects=True,
+    )
+
+    assert response.status_code == 200
+    assert Service.query.count() == 0
+    assert "Gambar maksimal 4 MB" in response.get_data(as_text=True)

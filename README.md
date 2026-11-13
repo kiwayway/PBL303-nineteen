@@ -107,3 +107,8 @@ Route: `GET /auth/google` (mulai) dan `GET /auth/google/callback`. Alur OpenID C
 - Setelah situs diakses lewat HTTPS, set `COOKIE_SECURE=1` di `.env` agar cookie sesi hanya dikirim lewat HTTPS.
 - Log keamanan (logger `nineteen.audit`) ditulis ke stderr dengan format `event="login_failed" ip="..." ident="..."`. Event: `register`, `otp_failed`, `otp_ok`, `login_success`, `login_failed`, `login_blocked`, `password_reset_requested`, `password_reset`. Dibaca Wazuh agent lewat `docker logs`/file log. Password dan kode OTP tidak pernah dicatat.
 - Jika berada di belakang reverse proxy (nginx), alamat IP klien perlu diteruskan dengan `ProxyFix`; tambahkan saat nginx dipasang.
+
+
+## Marketplace checkout, pembayaran, dan laporan
+
+Implementasi alur katalog, cart, checkout, transfer manual, approval admin, dashboard seller, dan export laporan dijelaskan pada [`docs/IMPLEMENTASI-MARKETPLACE.md`](docs/IMPLEMENTASI-MARKETPLACE.md). Konfigurasi produksi tersedia di `docker-compose.prod.yml`. Migration terbaru: `0007`.

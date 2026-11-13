@@ -52,6 +52,7 @@ def create_app(test_config=None):
         SECRET_KEY=secret or "test-only-secret",
         SQLALCHEMY_DATABASE_URI=db_url,
         SQLALCHEMY_TRACK_MODIFICATIONS=False,
+        MAX_CONTENT_LENGTH=6 * 1024 * 1024,
         PERMANENT_SESSION_LIFETIME=timedelta(days=30),
         SESSION_COOKIE_HTTPONLY=True,
         SESSION_COOKIE_SAMESITE="Lax",
@@ -75,6 +76,9 @@ def create_app(test_config=None):
             os.environ.get("MAIL_USERNAME", ""),
         ),
         CONTACT_EMAIL=os.environ.get("CONTACT_EMAIL", "nineteenofficial3@gmail.com"),
+        PAYMENT_BANK_NAME=os.environ.get("PAYMENT_BANK_NAME", ""),
+        PAYMENT_BANK_ACCOUNT_NAME=os.environ.get("PAYMENT_BANK_ACCOUNT_NAME", ""),
+        PAYMENT_BANK_ACCOUNT_NUMBER=os.environ.get("PAYMENT_BANK_ACCOUNT_NUMBER", ""),
     )
     if test_config:
         app.config.update(test_config)
@@ -97,6 +101,7 @@ def create_app(test_config=None):
     from .auth.google import google_enabled
     from .auth.routes import csrf_token
     from .catalog import bp as catalog_bp
+    from .commerce import bp as commerce_bp
     from .main import bp as main_bp
     from .profile import bp as profile_bp
 
@@ -104,6 +109,7 @@ def create_app(test_config=None):
     app.register_blueprint(admin_bp)
     app.register_blueprint(auth_bp)
     app.register_blueprint(catalog_bp)
+    app.register_blueprint(commerce_bp)
     app.register_blueprint(profile_bp)
     app.jinja_env.globals["csrf_token"] = csrf_token
     app.jinja_env.globals["google_enabled"] = google_enabled
