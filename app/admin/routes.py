@@ -11,6 +11,7 @@ from flask import (
     redirect,
     render_template,
     request,
+    send_file,
     url_for,
 )
 from PIL import Image, ImageOps, UnidentifiedImageError
