@@ -1,0 +1,264 @@
+{#
+  PROFIL SELLER (gaya LinkedIn)  ->  URL: /seller/<id>
+  Data datang dari app/sellers/routes.py: seller, experiences, certificates,
+  projects, services, reviews. Template ini hanya MENAMPILKAN data itu.
+
+  Sintaks Jinja yang dipakai:
+    {{ nilai }}              tampilkan nilai (otomatis di-escape, aman dari XSS)
+    {% if x %}...{% endif %} tampilkan jika x ada/benar
+    {% for a in daftar %}    ulangi untuk tiap item
+    {{ path | media_url }}   filter buatan kita: ubah path gambar jadi URL
+#}
+{% extends "base.html" %}
+{% from "components/service_card.html" import service_card %}
+{% block title %}{{ seller.name }} · nineteen studios{% endblock %}
+
+{% block body %}
+{% include "components/navbar.html" %}
+
+{% set rating = seller.avg_rating %}
+{% set focus_list = (seller.focus or "").split(",") %}
+
+<main class="bg-[#F7FAFF] pb-20">
+
+  <!-- 1. KARTU IDENTITAS: cover + foto + nama + headline + statistik -->
+  <section class="mx-auto max-w-[1100px] px-4 pt-6 sm:px-8">
+    <div class="overflow-hidden rounded-3xl border border-brand/10 bg-white shadow-xl shadow-blue-900/5">
+
+      <div class="relative h-36 overflow-hidden bg-gradient-to-r from-brand to-blue-400 sm:h-48">
+        <span aria-hidden="true" class="absolute -right-6 -top-8 h-32 w-32 rounded-full bg-sun/90 sm:h-44 sm:w-44"></span>
+        <span aria-hidden="true" class="absolute bottom-4 left-1/3 h-8 w-8 rounded-full bg-white/30"></span>
+      </div>
+
+      <div class="px-5 pb-6 sm:px-8">
+        {# Foto profil menimpa cover: margin negatif (-mt-*) menariknya ke atas #}
+        {% if seller.avatar %}
+        <img src="{{ seller.avatar | media_url }}" alt="Foto {{ seller.name }}"
+             class="-mt-12 h-24 w-24 rounded-full border-4 border-white bg-brand-soft object-cover shadow-lg sm:-mt-16 sm:h-32 sm:w-32">
+        {% else %}
+        <span class="-mt-12 grid h-24 w-24 place-items-center rounded-full border-4 border-white bg-brand text-4xl font-extrabold text-white shadow-lg sm:-mt-16 sm:h-32 sm:w-32 sm:text-5xl">{{ seller.name[:1] | upper }}</span>
+        {% endif %}
+
+        <div class="mt-3 flex flex-wrap items-center gap-x-3 gap-y-1">
+          <h1 class="text-2xl font-extrabold tracking-tight sm:text-3xl">{{ seller.name }}</h1>
+          {% if seller.is_top_seller %}
+          <span class="rounded-full bg-sun px-3 py-1 text-[11px] font-extrabold text-ink">TOP SELLER</span>
+          {% endif %}
+        </div>
+        <p class="mt-1 text-base text-ink/80">{{ seller.headline or "Penyedia jasa di nineteen." }}</p>
+        <p class="mt-1 text-sm text-ink/50">
+          {% if seller.location %}📍 {{ seller.location }} · {% endif %}Bergabung sejak {{ seller.created_at.year }}
+        </p>
+
+        <dl class="mt-5 grid grid-cols-2 gap-3 sm:grid-cols-4">
+          <div class="rounded-2xl bg-brand-soft px-4 py-3">
+            <dt class="text-[11px] font-semibold uppercase tracking-wide text-ink/50">Rating</dt>
+            <dd class="text-xl font-extrabold"><span class="text-sun">★</span> {{ rating if rating else "Baru" }}</dd>
+          </div>
+          <div class="rounded-2xl bg-brand-soft px-4 py-3">
+            <dt class="text-[11px] font-semibold uppercase tracking-wide text-ink/50">Pesanan selesai</dt>
+            <dd class="text-xl font-extrabold">{{ seller.completed_orders }}</dd>
+          </div>
+          <div class="rounded-2xl bg-brand-soft px-4 py-3">
+            <dt class="text-[11px] font-semibold uppercase tracking-wide text-ink/50">Jasa aktif</dt>
+            <dd class="text-xl font-extrabold">{{ services | length }}</dd>
+          </div>
+          <div class="rounded-2xl bg-brand-soft px-4 py-3">
+            <dt class="text-[11px] font-semibold uppercase tracking-wide text-ink/50">Ulasan</dt>
+            <dd class="text-xl font-extrabold">{{ review_count }}</dd>
+          </div>
+        </dl>
+      </div>
+    </div>
+  </section>
+
+  <!-- 2. MENU TAB: Tentang | Pengalaman | Portofolio | Jasa | Review -->
+  <div class="sticky top-[60px] z-30 mt-6 border-b border-brand/10 bg-white/95 backdrop-blur">
+    <nav id="profileTabs" aria-label="Bagian profil" class="mx-auto flex max-w-[1100px] gap-1 overflow-x-auto px-4 no-scrollbar sm:px-8">
+      {% for key, label, count in [
+           ("tentang", "Tentang", None),
+           ("pengalaman", "Pengalaman", experiences | length),
+           ("portofolio", "Portofolio", projects | length),
+           ("jasa", "Jasa", services | length),
+           ("review", "Review", review_count)] %}
+      <a href="#{{ key }}" data-tab="{{ key }}"
+         class="shrink-0 border-b-[3px] border-transparent px-4 py-3.5 text-sm font-bold text-ink/60 transition hover:text-brand">
+        {{ label }}{% if count %} <span class="ml-1 rounded-full bg-brand-soft px-2 py-0.5 text-[11px] text-brand">{{ count }}</span>{% endif %}
+      </a>
+      {% endfor %}
+    </nav>
+  </div>
+
+  <!-- 3. ISI: panel di kiri, ringkasan di kanan -->
+  <div class="mx-auto mt-6 grid max-w-[1100px] gap-6 px-4 sm:px-8 lg:grid-cols-[minmax(0,1fr)_300px]">
+
+    <div class="min-w-0 space-y-6">
+
+      <!-- TENTANG -->
+      <section id="tentang" data-panel class="rounded-3xl border border-brand/10 bg-white p-6 shadow-sm sm:p-8">
+        <h2 class="text-xl font-extrabold">Tentang</h2>
+        {% if seller.bio %}
+        <p class="mt-3 whitespace-pre-line leading-relaxed text-ink/80">{{ seller.bio }}</p>
+        {% else %}
+        <p class="mt-3 text-sm text-ink/50">Seller ini belum menulis perkenalan.</p>
+        {% endif %}
+      </section>
+
+      <!-- PENGALAMAN + SERTIFIKAT -->
+      <section id="pengalaman" data-panel class="rounded-3xl border border-brand/10 bg-white p-6 shadow-sm sm:p-8">
+        <h2 class="text-xl font-extrabold">Pengalaman</h2>
+        {% if experiences %}
+        <ol class="mt-5 space-y-6 border-l-2 border-brand/20 pl-6">
+          {% for e in experiences %}
+          <li class="relative">
+            <span aria-hidden="true" class="absolute -left-[33px] top-1.5 h-3.5 w-3.5 rounded-full border-2 border-white bg-brand ring-2 ring-brand/30"></span>
+            <h3 class="font-bold">{{ e.position }}</h3>
+            <p class="text-sm text-ink/70">{{ e.institution }}{% if e.period %} · {{ e.period }}{% endif %}</p>
+            {% if e.description %}<p class="mt-2 whitespace-pre-line text-sm leading-relaxed text-ink/70">{{ e.description }}</p>{% endif %}
+          </li>
+          {% endfor %}
+        </ol>
+        {% else %}
+        <p class="mt-3 text-sm text-ink/50">Belum ada pengalaman yang ditambahkan.</p>
+        {% endif %}
+
+        <h3 class="mt-8 border-t border-brand/10 pt-6 text-lg font-extrabold">Sertifikat</h3>
+        {% if certificates %}
+        <ul class="mt-4 grid gap-3 sm:grid-cols-2">
+          {% for c in certificates %}
+          <li class="rounded-2xl bg-brand-soft p-4">
+            <p class="font-bold">{{ c.name }}</p>
+            <p class="text-sm text-ink/60">{{ c.issuer or "" }}{% if c.year %} · {{ c.year }}{% endif %}</p>
+            {# Tautan buatan seller: hanya http/https yang boleh jadi link (cegah javascript:) #}
+            {% if c.credential_url and c.credential_url.startswith(("http://", "https://")) %}
+            <a href="{{ c.credential_url }}" target="_blank" rel="noopener noreferrer nofollow" class="mt-2 inline-block text-sm font-bold text-brand hover:underline">Lihat kredensial →</a>
+            {% endif %}
+          </li>
+          {% endfor %}
+        </ul>
+        {% else %}
+        <p class="mt-3 text-sm text-ink/50">Belum ada sertifikat.</p>
+        {% endif %}
+      </section>
+
+      <!-- PORTOFOLIO -->
+      <section id="portofolio" data-panel class="rounded-3xl border border-brand/10 bg-white p-6 shadow-sm sm:p-8">
+        <h2 class="text-xl font-extrabold">Portofolio</h2>
+        {% if projects %}
+        <ul class="mt-5 grid gap-5 sm:grid-cols-2">
+          {% for p in projects %}
+          <li class="overflow-hidden rounded-2xl border border-brand/10">
+            <div class="aspect-[16/9] bg-gradient-to-br from-brand-soft to-blue-200">
+              {% if p.image %}
+              <img src="{{ p.image | media_url }}" alt="{{ p.title }}" loading="lazy" class="h-full w-full object-cover" onerror="this.remove()">
+              {% endif %}
+            </div>
+            <div class="p-4">
+              <h3 class="font-bold">{{ p.title }}</h3>
+              {% if p.description %}<p class="mt-1 line-clamp-3 text-sm text-ink/70">{{ p.description }}</p>{% endif %}
+              {% if p.tech_stack %}
+              <p class="mt-3 flex flex-wrap gap-1.5">
+                {% for t in p.tech_stack.split(",") if t.strip() %}
+                <span class="rounded-full bg-brand-soft px-2.5 py-1 text-[11px] font-semibold text-brand">{{ t.strip() }}</span>
+                {% endfor %}
+              </p>
+              {% endif %}
+              {% if p.link and p.link.startswith(("http://", "https://")) %}
+              <a href="{{ p.link }}" target="_blank" rel="noopener noreferrer nofollow" class="mt-3 inline-block text-sm font-bold text-brand hover:underline">Lihat proyek →</a>
+              {% endif %}
+            </div>
+          </li>
+          {% endfor %}
+        </ul>
+        {% else %}
+        <p class="mt-3 text-sm text-ink/50">Belum ada proyek di portofolio.</p>
+        {% endif %}
+      </section>
+
+      <!-- JASA YANG DITAWARKAN (memakai kartu yang sama dengan homepage) -->
+      <section id="jasa" data-panel class="rounded-3xl border border-brand/10 bg-white p-6 shadow-sm sm:p-8">
+        <h2 class="text-xl font-extrabold">Jasa yang ditawarkan</h2>
+        {% if services %}
+        <ul class="mt-5 grid gap-5 sm:grid-cols-2">
+          {% for s in services %}<li>{{ service_card(s) }}</li>{% endfor %}
+        </ul>
+        {% else %}
+        <p class="mt-3 text-sm text-ink/50">Belum ada jasa aktif.</p>
+        {% endif %}
+      </section>
+
+      <!-- REVIEW -->
+      <section id="review" data-panel class="rounded-3xl border border-brand/10 bg-white p-6 shadow-sm sm:p-8">
+        <div class="flex flex-wrap items-center justify-between gap-3">
+          <h2 class="text-xl font-extrabold">Review</h2>
+          {% if rating %}<p class="text-sm font-semibold"><span class="text-sun text-lg">★</span> {{ rating }} dari {{ review_count }} ulasan</p>{% endif %}
+        </div>
+        {% if reviews %}
+        <ul class="mt-5 divide-y divide-brand/10">
+          {% for r in reviews %}
+          <li class="py-4 first:pt-0">
+            <div class="flex items-center gap-3">
+              <span class="grid h-9 w-9 place-items-center rounded-full bg-brand-soft text-sm font-bold text-brand">{{ r.customer.name[:1] | upper }}</span>
+              <div>
+                <p class="text-sm font-bold">{{ (r.customer.name.split() or ["Pengguna"])[0] }}</p>
+                <p class="text-xs text-ink/50"><span class="text-sun">{{ "★" * r.rating }}</span><span class="text-ink/20">{{ "★" * (5 - r.rating) }}</span> · {{ r.created_at.strftime("%d/%m/%Y") }}</p>
+              </div>
+            </div>
+            {% if r.comment %}<p class="mt-2 whitespace-pre-line text-sm leading-relaxed text-ink/80">{{ r.comment }}</p>{% endif %}
+          </li>
+          {% endfor %}
+        </ul>
+        {% else %}
+        <p class="mt-3 text-sm text-ink/50">Belum ada review.</p>
+        {% endif %}
+      </section>
+    </div>
+
+    <!-- SIDEBAR -->
+    <aside class="space-y-6 lg:sticky lg:top-[130px] lg:self-start">
+      <div class="rounded-3xl border border-brand/10 bg-white p-6 shadow-sm">
+        <h2 class="text-base font-extrabold">Fokus keahlian</h2>
+        <p class="mt-3 flex flex-wrap gap-2">
+          {% for f in focus_list if f.strip() %}
+          <span class="rounded-full bg-brand-soft px-3 py-1 text-xs font-semibold text-brand">{{ f.strip() }}</span>
+          {% else %}
+          <span class="text-sm text-ink/50">Belum diisi.</span>
+          {% endfor %}
+        </p>
+        <a href="#jasa" data-tab="jasa" class="mt-5 block rounded-xl bg-brand py-3 text-center text-sm font-bold text-white shadow-lg shadow-blue-500/30 transition hover:bg-brand-dark">Lihat jasa</a>
+      </div>
+    </aside>
+  </div>
+</main>
+
+{% include "components/footer.html" %}
+
+<script>
+  {# Tab: hanya satu panel tampil. Tanpa JavaScript semua panel tetap terbaca berurutan. #}
+  (() => {
+    const tabs = document.querySelectorAll('[data-tab]');
+    const panels = document.querySelectorAll('[data-panel]');
+    const names = Array.from(panels, p => p.id);
+
+    function show(name, scroll) {
+      if (!names.includes(name)) name = 'tentang';
+      panels.forEach(p => p.classList.toggle('hidden', p.id !== name));
+      document.querySelectorAll('#profileTabs [data-tab]').forEach(t => {
+        const on = t.dataset.tab === name;
+        t.classList.toggle('border-brand', on);
+        t.classList.toggle('text-brand', on);
+        t.classList.toggle('text-ink/60', !on);
+        t.setAttribute('aria-current', on ? 'page' : 'false');
+      });
+      if (scroll) document.getElementById('profileTabs').scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+
+    tabs.forEach(t => t.addEventListener('click', e => {
+      e.preventDefault();
+      show(t.dataset.tab, true);
+      history.replaceState(null, '', '#' + t.dataset.tab);
+    }));
+    show(location.hash.slice(1), false);
+  })();
+</script>
+{% endblock %}

@@ -92,12 +92,18 @@ def test_audit_log_tidak_memuat_password(client, caplog):
 
 
 def test_audit_log_aman_dari_log_injection(client, caplog):
-    logger = logging.getLogger("nineteen.audit")
-    logger.addHandler(caplog.handler)
-    try:
-        with caplog.at_level(logging.INFO, logger="nineteen.audit"):
-            post(client, "/login", {"identifier": "a@b.c\nevent=\"login_success\"", "password": "x"},
-                 page="/login")
-    finally:
-        logger.removeHandler(caplog.handler)
-    assert len([ln for ln in caplog.text.splitlines() if "event=" in ln]) == 1
+    with caplog.at_level(logging.INFO, logger="nineteen.audit"):
+        post(
+            client,
+            "/login",
+            {
+                "identifier": 'a@b.c\nevent="login_success"',
+                "password": "x"
+            },
+            page="/login"
+        )
+
+    assert len([
+        ln for ln in caplog.text.splitlines()
+        if "event=" in ln
+    ]) == 1

@@ -76,18 +76,17 @@ def test_service_without_active_package_hidden(client):
     assert "Jasa fullstack web" not in client.get("/").get_data(as_text=True)
 
 
-def test_homepage_shows_all_categories_in_logo_and_background_grids(client):
+def test_homepage_shows_all_categories_in_icon_row_and_list(client):
     categories = [Category(name=f"Kategori {i:02d}") for i in range(1, 11)]
     db.session.add_all(categories)
     db.session.commit()
 
     html = client.get("/").get_data(as_text=True)
 
-    # Setiap kategori muncul di kedua bagian navigasi, tanpa batas 6 atau 8 item.
+    # Setiap kategori muncul di baris ikon dan di daftar bawah, tanpa batas 6 atau 8 item.
     for category in categories:
         category_link = f'href="/jasa?kategori={category.id}"'
         assert html.count(category_link) >= 2
         assert category.name in html
 
     assert "lg:grid-cols-8" in html
-    assert "xl:grid-cols-4" in html

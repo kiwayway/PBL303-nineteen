@@ -76,6 +76,7 @@ def create_app(test_config=None):
             os.environ.get("MAIL_USERNAME", ""),
         ),
         CONTACT_EMAIL=os.environ.get("CONTACT_EMAIL", "nineteenofficial3@gmail.com"),
+        DATA_ENCRYPTION_KEY=os.environ.get("DATA_ENCRYPTION_KEY", ""),
         PAYMENT_BANK_NAME=os.environ.get("PAYMENT_BANK_NAME", ""),
         PAYMENT_BANK_ACCOUNT_NAME=os.environ.get("PAYMENT_BANK_ACCOUNT_NAME", ""),
         PAYMENT_BANK_ACCOUNT_NUMBER=os.environ.get("PAYMENT_BANK_ACCOUNT_NUMBER", ""),
@@ -104,6 +105,8 @@ def create_app(test_config=None):
     from .commerce import bp as commerce_bp
     from .main import bp as main_bp
     from .profile import bp as profile_bp
+    from .seller_apply import bp as seller_apply_bp
+    from .sellers import bp as sellers_bp
 
     app.register_blueprint(main_bp)
     app.register_blueprint(admin_bp)
@@ -111,6 +114,8 @@ def create_app(test_config=None):
     app.register_blueprint(catalog_bp)
     app.register_blueprint(commerce_bp)
     app.register_blueprint(profile_bp)
+    app.register_blueprint(seller_apply_bp)
+    app.register_blueprint(sellers_bp)
     app.jinja_env.globals["csrf_token"] = csrf_token
     app.jinja_env.globals["google_enabled"] = google_enabled
 

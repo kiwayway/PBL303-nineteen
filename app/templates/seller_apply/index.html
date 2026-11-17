@@ -1,0 +1,218 @@
+{#
+  /akun/seller  ->  syarat jadi seller + form pengajuan.
+  Data dari app/seller_apply/routes.py: items (checklist), percent, application, payout, dll.
+  Tiap form mengirim POST ke route di routes.py; hasilnya kembali ke halaman ini lewat flash.
+#}
+{% extends "profile/_layout.html" %}
+{% from "profile/_ui.html" import field, btn, icon %}
+{% set status = application.status if application else none %}
+{% set is_seller = user.role == "seller" %}
+{% set card = "mb-5 rounded-2xl border border-slate-200 bg-white p-5 sm:p-6" %}
+{% set input_cls = "w-full rounded-xl border border-slate-300 bg-white px-3.5 py-3 text-sm focus:border-brand focus:outline-none focus:ring-2 focus:ring-brand/30" %}
+
+{% block content %}
+<h1 class="text-2xl font-extrabold text-slate-900">Jadi Seller</h1>
+<p class="mb-5 mt-1 text-sm text-slate-600">Lengkapi semua syarat, lalu ajukan ke admin. Setelah disetujui kamu bisa mengunggah jasa.</p>
+
+{# ---- Banner status ---- #}
+{% if is_seller %}
+<div class="mb-5 rounded-2xl border border-emerald-200 bg-emerald-50 p-5 text-emerald-900">
+  <p class="font-bold">Selamat, kamu sudah menjadi seller!</p>
+  <p class="mt-1 text-sm">Kelola jasamu di <a class="font-semibold underline" href="{{ url_for('commerce.seller_services') }}">Jasa Saya</a>, pantau
+    <a class="font-semibold underline" href="{{ url_for('commerce.seller_orders') }}">Pesanan Seller</a>, atau lihat
+    <a class="font-semibold underline" href="{{ url_for('sellers.profile', seller_id=user.id) }}">profil publikmu</a>.</p>
+</div>
+{% elif status == "submitted" %}
+<div class="mb-5 rounded-2xl border border-blue-200 bg-blue-50 p-5 text-blue-900">
+  <p class="font-bold">Pengajuanmu sedang ditinjau admin</p>
+  <p class="mt-1 text-sm">Dikirim {{ application.submitted_at | tgl }}. Data pengajuan dikunci selama peninjauan.</p>
+</div>
+{% elif status == "needs_revision" %}
+<div class="mb-5 rounded-2xl border border-orange-200 bg-orange-50 p-5 text-orange-900">
+  <p class="font-bold">Admin meminta perbaikan</p>
+  <p class="mt-1 whitespace-pre-line text-sm">{{ application.admin_note or "Silakan periksa kembali data pengajuanmu." }}</p>
+</div>
+{% elif status == "rejected" %}
+<div class="mb-5 rounded-2xl border border-red-200 bg-red-50 p-5 text-red-900">
+  <p class="font-bold">Pengajuan ditolak</p>
+  <p class="mt-1 whitespace-pre-line text-sm">{{ application.admin_note or "-" }}</p>
+  <p class="mt-2 text-sm">Perbaiki datanya lalu ajukan ulang.</p>
+</div>
+{% endif %}
+
+{# ---- Progress + checklist ---- #}
+{% if not is_seller %}
+<section class="{{ card }}" aria-labelledby="syarat">
+  <div class="flex items-center justify-between gap-3">
+    <h2 id="syarat" class="text-lg font-bold text-slate-900">Kelengkapan data</h2>
+    <p class="text-sm font-bold text-brand">{{ percent }}%</p>
+  </div>
+  <div class="mt-3 h-2.5 overflow-hidden rounded-full bg-slate-100" role="progressbar" aria-valuenow="{{ percent }}" aria-valuemin="0" aria-valuemax="100">
+    <div class="h-full rounded-full bg-brand transition-all" style="width: {{ percent }}%"></div>
+  </div>
+  <p class="mt-2 text-xs text-slate-500">{{ done }} dari {{ total }} syarat terpenuhi.</p>
+  <ul class="mt-4 divide-y divide-slate-100">
+    {% for i in items %}
+    <li class="flex items-start gap-3 py-3">
+      <span class="mt-0.5 {% if i.ok %}text-emerald-600{% else %}text-slate-300{% endif %}">{{ icon('check', 'h-5 w-5') }}</span>
+      <div class="min-w-0 flex-1">
+        <p class="text-sm font-semibold {% if i.ok %}text-slate-900{% else %}text-slate-700{% endif %}">{{ i.label }}</p>
+        {% if not i.ok %}<p class="text-xs text-slate-500">{{ i.hint }}</p>{% endif %}
+      </div>
+      {% if not i.ok %}<a href="{{ i.href }}" class="shrink-0 text-sm font-semibold text-brand hover:underline">Lengkapi</a>{% endif %}
+    </li>
+    {% endfor %}
+  </ul>
+
+  {% if editable %}
+  <form method="post" action="{{ url_for('seller_apply.submit') }}" class="mt-4">
+    <input type="hidden" name="_csrf" value="{{ csrf_token() }}">
+    <button type="submit" {% if not all_ok %}disabled{% endif %}
+            class="inline-flex min-h-11 items-center justify-center rounded-xl px-6 text-sm font-semibold transition {% if all_ok %}bg-brand text-white hover:bg-[#1f5fd0]{% else %}cursor-not-allowed bg-slate-200 text-slate-500{% endif %}">
+      {% if status in ("needs_revision", "rejected") %}Ajukan ulang{% else %}Ajukan jadi seller{% endif %}
+    </button>
+    {% if not all_ok %}<p class="mt-2 text-xs text-slate-500">Tombol aktif setelah semua syarat terpenuhi (100%).</p>{% endif %}
+  </form>
+  {% endif %}
+</section>
+{% endif %}
+
+{# ---- Kategori + deskripsi jasa ---- #}
+{% if not is_seller %}
+<section id="kategori" class="{{ card }} scroll-mt-24">
+  <h2 class="text-lg font-bold text-slate-900">Jasa yang ditawarkan</h2>
+  {% if editable %}
+  <form method="post" action="{{ url_for('seller_apply.save_categories') }}" class="mt-4 space-y-4">
+    <input type="hidden" name="_csrf" value="{{ csrf_token() }}">
+    <fieldset>
+      <legend class="mb-2 text-sm font-semibold text-slate-700">Kategori (maksimal {{ max_categories }})</legend>
+      <div class="flex flex-wrap gap-2">
+        {% for c in categories %}
+        <label class="cursor-pointer">
+          <input type="checkbox" name="categories" value="{{ c.id }}" class="peer sr-only" {% if c.id in selected %}checked{% endif %}>
+          <span class="inline-flex min-h-10 items-center rounded-full border border-slate-300 px-4 text-sm font-medium text-slate-700 peer-checked:border-brand peer-checked:bg-blue-50 peer-checked:text-[#1f5fd0] peer-focus-visible:ring-2 peer-focus-visible:ring-brand/40">{{ c.name }}</span>
+        </label>
+        {% else %}
+        <p class="text-sm text-slate-500">Belum ada kategori. Hubungi admin.</p>
+        {% endfor %}
+      </div>
+    </fieldset>
+    <div>
+      <label for="service_plan" class="mb-1.5 block text-sm font-semibold text-slate-700">Jelaskan jasa yang akan kamu tawarkan</label>
+      <textarea id="service_plan" name="service_plan" rows="4" maxlength="1000" class="{{ input_cls }}"
+                aria-describedby="plan-hint">{{ application.service_plan if application and application.service_plan else "" }}</textarea>
+      <p id="plan-hint" class="mt-1 text-xs text-slate-500">Minimal {{ min_plan }} karakter. Contoh: pembuatan website company profile, desain logo, dan sejenisnya.</p>
+    </div>
+    {{ btn("Simpan") }}
+  </form>
+  {% else %}
+  <p class="mt-3 flex flex-wrap gap-2">{% for c in application.categories if application %}<span class="rounded-full bg-blue-50 px-3 py-1 text-sm font-medium text-[#1f5fd0]">{{ c.name }}</span>{% endfor %}</p>
+  {% if application and application.service_plan %}<p class="mt-3 whitespace-pre-line text-sm text-slate-700">{{ application.service_plan }}</p>{% endif %}
+  {% endif %}
+</section>
+
+{# ---- Rekening pencairan ---- #}
+<section id="rekening" class="{{ card }} scroll-mt-24">
+  <h2 class="text-lg font-bold text-slate-900">Rekening pencairan</h2>
+  <p class="mt-1 text-sm text-slate-600">Dipakai untuk mencairkan penghasilanmu. Nomor rekening disimpan terenkripsi dan hanya 4 digit terakhir yang ditampilkan.</p>
+  {% if payout %}
+  <p class="mt-3 rounded-xl bg-slate-50 px-4 py-3 text-sm text-slate-700"><b>{{ payout.bank_name }}</b> · {{ payout.masked_number }} · a.n. {{ payout.account_holder }}</p>
+  {% endif %}
+  {% if editable %}
+  <form method="post" action="{{ url_for('seller_apply.save_payout') }}" class="mt-4 grid gap-4 sm:grid-cols-2" autocomplete="off">
+    <input type="hidden" name="_csrf" value="{{ csrf_token() }}">
+    <div>
+      <label for="bank_name" class="mb-1.5 block text-sm font-semibold text-slate-700">Bank</label>
+      <select id="bank_name" name="bank_name" required class="{{ input_cls }}">
+        <option value="">Pilih bank</option>
+        {% for b in banks %}<option value="{{ b }}" {% if payout and payout.bank_name == b %}selected{% endif %}>{{ b }}</option>{% endfor %}
+      </select>
+    </div>
+    {{ field("account_number", "Nomor rekening", "", none, "text", 'required inputmode="numeric" maxlength="24" autocomplete="off"', false, "Hanya angka. Isi ulang saat mengubah rekening.") }}
+    <div class="sm:col-span-2">
+      {{ field("account_holder", "Nama pemilik rekening", payout.account_holder if payout else "", none, "text", 'required maxlength="120" autocomplete="off"', false, "Harus sama dengan nama di akunmu.") }}
+    </div>
+    <div class="sm:col-span-2">{{ btn("Simpan rekening") }}</div>
+  </form>
+  {% endif %}
+</section>
+{% endif %}
+
+{# ---- Pengalaman ---- #}
+<section id="pengalaman" class="{{ card }} scroll-mt-24">
+  <h2 class="text-lg font-bold text-slate-900">Pengalaman</h2>
+  <p class="mt-1 text-sm text-slate-600">Tampil di profil publikmu. Wajib ada minimal satu pengalaman <i>atau</i> proyek portofolio.</p>
+  {% if experiences %}
+  <ul class="mt-4 space-y-3">
+    {% for e in experiences %}
+    <li class="flex items-start justify-between gap-3 rounded-xl bg-slate-50 p-4">
+      <div class="min-w-0">
+        <p class="text-sm font-bold text-slate-900">{{ e.position }}</p>
+        <p class="text-sm text-slate-600">{{ e.institution }}{% if e.period %} · {{ e.period }}{% endif %}</p>
+        {% if e.description %}<p class="mt-1 whitespace-pre-line text-sm text-slate-600">{{ e.description }}</p>{% endif %}
+      </div>
+      {% if can_edit_items %}
+      <form method="post" action="{{ url_for('seller_apply.delete_experience', item_id=e.id) }}">
+        <input type="hidden" name="_csrf" value="{{ csrf_token() }}">
+        <button type="submit" data-confirm="Hapus pengalaman ini?" data-confirm-text="Tindakan ini tidak bisa dibatalkan." data-confirm-label="Hapus"
+                class="shrink-0 text-sm font-semibold text-red-700 hover:underline">Hapus</button>
+      </form>
+      {% endif %}
+    </li>
+    {% endfor %}
+  </ul>
+  {% endif %}
+  {% if can_edit_items %}
+  <form method="post" action="{{ url_for('seller_apply.add_experience') }}" class="mt-4 grid gap-4 sm:grid-cols-2">
+    <input type="hidden" name="_csrf" value="{{ csrf_token() }}">
+    {{ field("position", "Posisi", "", none, "text", 'required maxlength="120"') }}
+    {{ field("institution", "Perusahaan / instansi", "", none, "text", 'required maxlength="120"') }}
+    <div class="sm:col-span-2">{{ field("period", "Periode", "", none, "text", 'maxlength="60"', false, "Contoh: 2022 - 2024") }}</div>
+    <div class="sm:col-span-2">
+      <label for="exp_description" class="mb-1.5 block text-sm font-semibold text-slate-700">Deskripsi singkat</label>
+      <textarea id="exp_description" name="description" rows="3" maxlength="1000" class="{{ input_cls }}"></textarea>
+    </div>
+    <div class="sm:col-span-2">{{ btn("Tambah pengalaman") }}</div>
+  </form>
+  {% endif %}
+</section>
+
+{# ---- Portofolio ---- #}
+<section id="portofolio" class="{{ card }} scroll-mt-24">
+  <h2 class="text-lg font-bold text-slate-900">Portofolio</h2>
+  {% if projects %}
+  <ul class="mt-4 space-y-3">
+    {% for p in projects %}
+    <li class="flex items-start justify-between gap-3 rounded-xl bg-slate-50 p-4">
+      <div class="min-w-0">
+        <p class="text-sm font-bold text-slate-900">{{ p.title }}</p>
+        {% if p.tech_stack %}<p class="text-xs font-medium text-[#1f5fd0]">{{ p.tech_stack }}</p>{% endif %}
+        {% if p.description %}<p class="mt-1 whitespace-pre-line text-sm text-slate-600">{{ p.description }}</p>{% endif %}
+        {% if p.link and p.link.startswith(("http://", "https://")) %}<a href="{{ p.link }}" target="_blank" rel="noopener noreferrer nofollow" class="mt-1 inline-block text-sm font-semibold text-brand hover:underline">Lihat proyek →</a>{% endif %}
+      </div>
+      {% if can_edit_items %}
+      <form method="post" action="{{ url_for('seller_apply.delete_project', item_id=p.id) }}">
+        <input type="hidden" name="_csrf" value="{{ csrf_token() }}">
+        <button type="submit" data-confirm="Hapus proyek ini?" data-confirm-text="Tindakan ini tidak bisa dibatalkan." data-confirm-label="Hapus"
+                class="shrink-0 text-sm font-semibold text-red-700 hover:underline">Hapus</button>
+      </form>
+      {% endif %}
+    </li>
+    {% endfor %}
+  </ul>
+  {% endif %}
+  {% if can_edit_items %}
+  <form method="post" action="{{ url_for('seller_apply.add_project') }}" class="mt-4 grid gap-4 sm:grid-cols-2">
+    <input type="hidden" name="_csrf" value="{{ csrf_token() }}">
+    <div class="sm:col-span-2">{{ field("title", "Judul proyek", "", none, "text", 'required maxlength="160"') }}</div>
+    {{ field("tech_stack", "Teknologi / alat", "", none, "text", 'maxlength="255"', false, "Contoh: Flask, Docker") }}
+    {{ field("link", "Tautan proyek (opsional)", "", none, "url", 'maxlength="255" placeholder="https://"') }}
+    <div class="sm:col-span-2">
+      <label for="project_description" class="mb-1.5 block text-sm font-semibold text-slate-700">Deskripsi singkat</label>
+      <textarea id="project_description" name="description" rows="3" maxlength="1000" class="{{ input_cls }}"></textarea>
+    </div>
+    <div class="sm:col-span-2">{{ btn("Tambah proyek") }}</div>
+  </form>
+  {% endif %}
+</section>
+{% endblock %}
