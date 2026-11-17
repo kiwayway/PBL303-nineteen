@@ -91,17 +91,30 @@ def test_audit_log_tidak_memuat_password(client, caplog):
     assert "salah-banget" not in text
 
 
+
+
 def test_audit_log_aman_dari_log_injection(client, caplog):
-    with caplog.at_level(logging.INFO, logger="nineteen.audit"):
-        post(
-            client,
-            "/login",
-            {
-                "identifier": 'a@b.c\nevent="login_success"',
-                "password": "x"
-            },
-            page="/login"
-        )
+    logger = logging.getLogger("nineteen.audit")
+
+    # Hindari satu log tertangkap dua kali oleh handler root.
+    original_propagate = logger.propagate
+    logger.propagate = False
+    logger.addHandler(caplog.handler)
+
+    try:
+        with caplog.at_level(logging.INFO, logger="nineteen.audit"):
+            post(
+                client,
+                "/login",
+                {
+                    "identifier": 'a@b.c\nevent="login_success"',
+                    "password": "x"
+                },
+                page="/login"
+            )
+    finally:
+        logger.removeHandler(caplog.handler)
+        logger.propagate = original_propagate
 
     assert len([
         ln for ln in caplog.text.splitlines()
