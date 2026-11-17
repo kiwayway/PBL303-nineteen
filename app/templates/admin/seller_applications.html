@@ -1,0 +1,33 @@
+{% extends "admin/base.html" %}
+{% block content %}
+<div class="mb-5"><h1 class="text-2xl font-bold">Pengajuan Seller</h1>
+<p class="mt-1 text-sm text-slate-500">Tinjau data pelamar. Role berubah jadi seller hanya setelah kamu menyetujui.</p></div>
+
+<div class="mb-4 flex flex-wrap gap-2 text-sm">
+  {% for key in ["submitted", "needs_revision", "approved", "rejected", "draft", "all"] %}
+  <a href="{{ url_for('admin.seller_applications', status=key) }}"
+     class="rounded-full border px-4 py-1.5 font-medium {% if status == key %}border-brand bg-blue-50 text-brand{% else %}border-slate-200 bg-white text-slate-600 hover:bg-slate-50{% endif %}">
+    {{ labels.get(key, "Semua") }}{% if key != "all" %} <span class="text-xs text-slate-400">{{ counts.get(key, 0) }}</span>{% endif %}
+  </a>
+  {% endfor %}
+</div>
+
+<div class="overflow-x-auto rounded-2xl border bg-white shadow-sm">
+<table class="w-full min-w-[640px] text-left text-sm">
+  <thead class="bg-slate-50 text-xs uppercase text-slate-500"><tr>
+    <th class="p-4">Pelamar</th><th class="p-4">Status</th><th class="p-4">Dikirim</th><th class="p-4"></th></tr></thead>
+  <tbody>
+  {% for a in rows %}
+  <tr class="border-t border-slate-100">
+    <td class="p-4"><p class="font-semibold">{{ a.user.name }}</p><p class="text-xs text-slate-500">{{ a.user.email }}</p></td>
+    <td class="p-4"><span class="rounded-full bg-slate-100 px-2.5 py-1 text-xs">{{ labels[a.status] }}</span></td>
+    <td class="p-4">{{ a.submitted_at.strftime("%d-%m-%Y %H:%M") if a.submitted_at else "-" }}</td>
+    <td class="p-4 text-right"><a class="font-semibold text-brand hover:underline" href="{{ url_for('admin.seller_application_detail', app_id=a.id) }}">Tinjau</a></td>
+  </tr>
+  {% else %}
+  <tr><td colspan="4" class="p-8 text-center text-slate-500">Tidak ada pengajuan.</td></tr>
+  {% endfor %}
+  </tbody>
+</table>
+</div>
+{% endblock %}

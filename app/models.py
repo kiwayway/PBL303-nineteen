@@ -9,6 +9,7 @@ from .extensions import db
 ROLES = ("admin", "seller", "customer")
 PAYMENT_STATUSES = ("pending", "waiting", "approved", "rejected")
 ITEM_STATUSES = ("in_progress", "completed")
+SELLER_APP_STATUSES = ("draft", "submitted", "needs_revision", "approved", "rejected")
 
 TOP_SELLER_MIN_ORDERS = 5
 TOP_SELLER_MIN_RATING = 4.5
@@ -405,3 +406,59 @@ class ContactInquiry(db.Model):
     message = db.Column(db.Text, nullable=False)
     status = db.Column(db.String(20), nullable=False, default="new", server_default="new", index=True)
     created_at = db.Column(db.DateTime(timezone=True), nullable=False, default=utcnow, index=True)
+
+
+# ---------------------------------------------------------------- pengajuan seller
+seller_application_categories = db.Table(
+    "seller_application_categories",
+    db.Column("application_id", db.ForeignKey("seller_applications.id", ondelete="CASCADE"), primary_key=True),
+    db.Column("category_id", db.ForeignKey("categories.id", ondelete="CASCADE"), primary_key=True),
+)
+
+
+class SellerApplication(db.Model):
+    """Pengajuan jadi seller. Satu baris per user; role baru berubah saat admin menyetujui."""
+    __tablename__ = "seller_applications"
+    __table_args__ = (
+        db.CheckConstraint(_in("status", SELLER_APP_STATUSES), name="ck_seller_applications_status"),
+    )
+
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.ForeignKey("users.id"), nullable=False, unique=True, index=True)
+    status = db.Column(db.String(14), nullable=False, default="draft", server_default="draft", index=True)
+    service_plan = db.Column(db.Text)  # jasa apa yang akan ditawarkan
+    submitted_at = db.Column(db.DateTime(timezone=True))
+    reviewed_by = db.Column(db.ForeignKey("users.id", ondelete="SET NULL"))
+    reviewed_at = db.Column(db.DateTime(timezone=True))
+    admin_note = db.Column(db.String(500))
+    created_at = db.Column(db.DateTime(timezone=True), nullable=False, default=utcnow)
+    updated_at = db.Column(db.DateTime(timezone=True), nullable=False, default=utcnow, onupdate=utcnow)
+
+    user = db.relationship(
+        "User", foreign_keys=[user_id],
+        backref=db.backref("seller_application", uselist=False, cascade="all, delete-orphan"),
+    )
+    reviewer = db.relationship("User", foreign_keys=[reviewed_by])
+    categories = db.relationship("Category", secondary=seller_application_categories)
+
+
+class PayoutAccount(db.Model):
+    """Rekening pencairan seller. Nomor rekening dienkripsi; hanya 4 digit akhir yang tampil."""
+    __tablename__ = "payout_accounts"
+
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.ForeignKey("users.id"), nullable=False, unique=True, index=True)
+    bank_name = db.Column(db.String(40), nullable=False)
+    account_holder = db.Column(db.String(120), nullable=False)
+    account_number_enc = db.Column(db.Text, nullable=False)
+    account_last4 = db.Column(db.String(4), nullable=False)
+    created_at = db.Column(db.DateTime(timezone=True), nullable=False, default=utcnow)
+    updated_at = db.Column(db.DateTime(timezone=True), nullable=False, default=utcnow, onupdate=utcnow)
+
+    user = db.relationship(
+        "User", backref=db.backref("payout_account", uselist=False, cascade="all, delete-orphan"),
+    )
+
+    @property
+    def masked_number(self):
+        return "•••• " + self.account_last4

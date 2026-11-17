@@ -7,6 +7,7 @@
 {% elif name == 'addresses' %}<path d="M12 21s7-6 7-12a7 7 0 0 0-14 0c0 6 7 12 7 12z"/><circle cx="12" cy="9" r="2.5"/>
 {% elif name == 'wishlist' %}<path d="M12 20s-8-5-8-11a4.5 4.5 0 0 1 8-2.5A4.5 4.5 0 0 1 20 9c0 6-8 11-8 11z"/>
 {% elif name == 'reviews' %}<path d="M12 3l2.8 5.8 6.2.9-4.5 4.4 1.1 6.2L12 17.3 6.4 20.3l1.1-6.2L3 9.7l6.2-.9z"/>
+{% elif name == 'seller' %}<path d="M4 9l1-5h14l1 5"/><path d="M5 9v11h14V9"/><path d="M9 20v-6h6v6"/>
 {% elif name == 'security' %}<path d="M12 3l8 3v6c0 5-3.5 8-8 9-4.5-1-8-4-8-9V6z"/><path d="M9 12l2 2 4-4"/>
 {% elif name == 'logout' %}<path d="M9 4H5v16h4M16 8l4 4-4 4M20 12H9"/>
 {% elif name == 'clock' %}<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>
@@ -22,6 +23,7 @@
   ('profile.orders','orders','Pesanan Saya'), ('profile.addresses','addresses','Alamat Saya'),
   ('profile.wishlist','wishlist','Wishlist / Favorit'), ('profile.reviews','reviews','Ulasan Saya'),
   ('profile.security','security','Keamanan Akun') ] %}
+{% if user and user.role == 'customer' %}{% set items = items + [('seller_apply.index','seller','Jadi Seller')] %}{% endif %}
 <nav aria-label="Navigasi akun">
   {% for endpoint, key, label in items %}
   <a href="{{ url_for(endpoint) }}" {% if key == active %}aria-current="page"{% endif %}

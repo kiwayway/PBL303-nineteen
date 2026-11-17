@@ -16,11 +16,16 @@ from flask import (
 )
 from PIL import Image, ImageOps, UnidentifiedImageError
 from sqlalchemy import func, or_
+from sqlalchemy.orm import joinedload
 
 from ..auditlog import audit
 from ..auth.routes import current_user
 from ..extensions import db
-from ..models import Category, Order, Review, Service, ServicePackage, User
+from ..models import (
+    SELLER_APP_STATUSES, Category, Order, Review, SellerApplication, Service, ServicePackage, User,
+    utcnow,
+)
+from ..seller_apply.logic import checklist, names_match, progress
 from .category_images import delete_category_image, save_category_image
 
 bp = Blueprint("admin", __name__, url_prefix="/admin")
@@ -440,3 +445,85 @@ def delete_user(user_id):
     audit("admin_user_anonymized",user_id=actor.id,target_user_id=target.id)
     flash("Akun dinonaktifkan dan data profil dianonimkan; histori transaksi dipertahankan.","success")
     return redirect(url_for("admin.users"))
+
+
+# ---------------------------------------------------------------- pengajuan seller
+APP_STATUS_LABELS = {
+    "draft": "Draf", "submitted": "Menunggu review", "needs_revision": "Perlu revisi",
+    "approved": "Disetujui", "rejected": "Ditolak",
+}
+
+
+@bp.get("/seller-applications")
+def seller_applications():
+    status = request.args.get("status", "submitted")
+    if status != "all" and status not in SELLER_APP_STATUSES:
+        status = "submitted"
+    query = SellerApplication.query.options(joinedload(SellerApplication.user))
+    if status != "all":
+        query = query.filter_by(status=status)
+    rows = query.order_by(SellerApplication.submitted_at.desc(), SellerApplication.id.desc()).limit(200).all()
+    counts = dict(db.session.query(SellerApplication.status, func.count()).group_by(SellerApplication.status).all())
+    return render_template(
+        "admin/seller_applications.html", rows=rows, status=status, counts=counts,
+        labels=APP_STATUS_LABELS, statuses=SELLER_APP_STATUSES, admin=_admin_user(),
+    )
+
+
+@bp.get("/seller-applications/<int:app_id>")
+def seller_application_detail(app_id):
+    application = db.get_or_404(SellerApplication, app_id)
+    user = application.user
+    payout = user.payout_account
+    items = checklist(user, application, payout)
+    done, total, percent = progress(items)
+    return render_template(
+        "admin/seller_application_detail.html", application=application, applicant=user,
+        payout=payout, items=items, percent=percent, all_ok=done == total,
+        name_match=bool(payout and names_match(payout.account_holder, user.name)),
+        labels=APP_STATUS_LABELS, admin=_admin_user(),
+    )
+
+
+@bp.post("/seller-applications/<int:app_id>/decision")
+def seller_application_decide(app_id):
+    application = db.get_or_404(SellerApplication, app_id)
+    admin = _admin_user()
+    decision = request.form.get("decision", "")
+    note = " ".join((request.form.get("note") or "").split())[:500]
+    back = redirect(url_for("admin.seller_application_detail", app_id=app_id))
+
+    if application.status != "submitted":
+        flash("Hanya pengajuan berstatus 'Menunggu review' yang bisa diputuskan.", "error")
+        return back
+    if decision not in ("approve", "reject", "revision"):
+        abort(400)
+    if decision != "approve" and len(note) < 5:
+        flash("Alasan atau catatan wajib diisi (minimal 5 karakter).", "error")
+        return back
+
+    user = application.user
+    if decision == "approve":
+        items = checklist(user, application, user.payout_account)
+        if not all(i["ok"] for i in items):
+            flash("Data pelamar tidak lagi lengkap. Minta revisi saja.", "error")
+            return back
+        if user.role == "customer":
+            user.role = "seller"
+        application.status = "approved"
+        application.admin_note = note or None
+        flash(f"{user.name} sekarang seller.", "success")
+    elif decision == "reject":
+        application.status = "rejected"
+        application.admin_note = note
+        flash("Pengajuan ditolak.", "success")
+    else:
+        application.status = "needs_revision"
+        application.admin_note = note
+        flash("Permintaan revisi dikirim ke pelamar.", "success")
+    application.reviewed_by = admin.id
+    application.reviewed_at = utcnow()
+    db.session.commit()
+    audit("seller_app_" + decision, ip=request.remote_addr, admin_id=admin.id,
+          user_id=user.id, application_id=application.id)
+    return back
