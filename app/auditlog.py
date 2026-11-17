@@ -1,3 +1,4 @@
+
 """Log keamanan berformat key="value" supaya mudah di-decode Wazuh.
 
 Contoh baris:
@@ -12,7 +13,14 @@ _log = logging.getLogger("nineteen.audit")
 
 def audit(event, **fields):
     parts = [f"event={json.dumps(event)}"]
+
     for key, value in fields.items():
-        # json.dumps meloloskan newline/kutip sehingga aman dari log injection
-        parts.append(f"{key}={json.dumps('' if value is None else str(value))}")
+        # Escape newline dan karakter "=" agar nilai input tidak
+        # dapat menyamar sebagai field audit baru.
+        encoded = json.dumps(
+            "" if value is None else str(value)
+        ).replace("=", r"\u003d")
+
+        parts.append(f"{key}={encoded}")
+
     _log.info(" ".join(parts))
