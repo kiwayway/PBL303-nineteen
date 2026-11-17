@@ -104,6 +104,7 @@ def create_app(test_config=None):
     from .commerce import bp as commerce_bp
     from .main import bp as main_bp
     from .profile import bp as profile_bp
+    from .sellers import bp as sellers_bp
 
     app.register_blueprint(main_bp)
     app.register_blueprint(admin_bp)
@@ -111,6 +112,7 @@ def create_app(test_config=None):
     app.register_blueprint(catalog_bp)
     app.register_blueprint(commerce_bp)
     app.register_blueprint(profile_bp)
+    app.register_blueprint(sellers_bp)
     app.jinja_env.globals["csrf_token"] = csrf_token
     app.jinja_env.globals["google_enabled"] = google_enabled
 

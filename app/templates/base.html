@@ -5,25 +5,36 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="color-scheme" content="light">
 <title>{% block title %}nineteen studios{% endblock %}</title>
-<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <script src="https://cdn.tailwindcss.com/3.4.17"></script>
 <script>
   tailwind.config = {
     theme: {
       extend: {
-        fontFamily: { sans: ['Poppins', 'system-ui', 'sans-serif'] },
-        colors: { brand: '#2f80ed', accent: '#ff9a1f', hero: '#8a9fdc' }
+        fontFamily: { sans: ['"Plus Jakarta Sans"', 'system-ui', 'sans-serif'] },
+        colors: {
+          brand: { DEFAULT: '#2F7BF5', dark: '#1F5FD0', soft: '#EAF3FF' },
+          sun: '#FFC933',
+          ink: '#1B2A4A',
+          mist: '#EAF3FF',
+          accent: '#ff9a1f',
+          hero: '#8a9fdc'
+        }
       }
     }
   }
 </script>
 <style>
-  :focus-visible { outline: 2px solid #2f80ed; outline-offset: 3px; }
+  :focus-visible { outline: 2px solid #2F7BF5; outline-offset: 3px; }
+  .no-scrollbar { scrollbar-width: none; -ms-overflow-style: none; }
+  .no-scrollbar::-webkit-scrollbar { display: none; }
 </style>
 <link rel="stylesheet" href="{{ url_for('static', filename='css/site-loader.css') }}">
 <script src="{{ url_for('static', filename='js/site-loader.js') }}" defer></script>
 </head>
-<body class="min-h-screen overflow-x-hidden bg-white pt-[env(safe-area-inset-top)] pb-[env(safe-area-inset-bottom)] font-sans text-black">
+<body class="min-h-screen overflow-x-hidden bg-white pt-[env(safe-area-inset-top)] pb-[env(safe-area-inset-bottom)] font-sans text-ink antialiased">
 {% include "components/loading_screen.html" %}
 {% block body %}{% endblock %}
 </body>

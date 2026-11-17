@@ -10,6 +10,7 @@ from sqlalchemy.orm import joinedload
 from .auth.routes import current_user
 from .extensions import db
 from .models import (
+    TOP_SELLER_MIN_ORDERS, TOP_SELLER_MIN_RATING,
     Category, ContactInquiry, Order, OrderItem, Review, Service, ServicePackage, User,
 )
 
@@ -151,6 +152,52 @@ def category_overview():
     ]
 
 
+
+def top_sellers(limit=8):
+    """Seller untuk homepage: pesanan selesai terbanyak, lalu rating tertinggi, lalu terbaru.
+    Statistik dihitung lewat dua subquery agar tidak terjadi N+1 per kartu."""
+    done = (
+        db.session.query(OrderItem.seller_id.label("sid"), func.count(OrderItem.id).label("done"))
+        .filter(OrderItem.status == "completed")
+        .group_by(OrderItem.seller_id)
+        .subquery()
+    )
+    rating = (
+        db.session.query(OrderItem.seller_id.label("sid"), func.avg(Review.rating).label("avg"))
+        .join(Review, Review.order_item_id == OrderItem.id)
+        .group_by(OrderItem.seller_id)
+        .subquery()
+    )
+    done_n = func.coalesce(done.c.done, 0)
+    rating_n = func.coalesce(rating.c.avg, 0)
+    rows = (
+        db.session.query(User, done_n, rating.c.avg)
+        .outerjoin(done, done.c.sid == User.id)
+        .outerjoin(rating, rating.c.sid == User.id)
+        .filter(User.role == "seller", User.is_active.is_(True))
+        .order_by(done_n.desc(), rating_n.desc(), User.id.desc())
+        .limit(limit)
+        .all()
+    )
+    result = []
+    for u, done_count, avg in rows:
+        avg = round(float(avg), 1) if avg else None
+        result.append(
+            {
+                "id": u.id,
+                "name": u.name,
+                "headline": u.headline,
+                "avatar": u.avatar,
+                "location": u.location,
+                "done": int(done_count),
+                "rating": avg,
+                "is_top": int(done_count) >= TOP_SELLER_MIN_ORDERS
+                and avg is not None
+                and avg >= TOP_SELLER_MIN_RATING,
+            }
+        )
+    return result
+
 # ---------------------------------------------------------------- route
 @bp.route("/")
 def index():
@@ -163,7 +210,7 @@ def index():
         popular=popular_services(),
         affordable=affordable_services(),
         category_icons=categories,
-        category_tiles=categories,
+        sellers=top_sellers(),
     )
 
 

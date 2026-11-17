@@ -1,144 +1,188 @@
 {% extends "base.html" %}
 {% from "components/service_card.html" import service_card %}
+{% macro carousel(items, empty_text) %}
+  {% if items %}
+  <ul data-carousel class="no-scrollbar -mx-4 flex snap-x snap-mandatory gap-4 overflow-x-auto scroll-smooth px-4 sm:-mx-8 sm:px-8 lg:mx-0 lg:px-0">
+    {% for s in items %}
+    <li class="w-[68%] shrink-0 snap-start sm:w-[40%] lg:w-[calc((100%-3rem)/4)]">{{ service_card(s) }}</li>
+    {% endfor %}
+  </ul>
+  {% else %}
+  <p class="rounded-2xl bg-brand-soft p-10 text-center text-sm text-ink/60">{{ empty_text }}</p>
+  {% endif %}
+{% endmacro %}
+{% macro arrows() %}
+  <div class="hidden gap-2 sm:flex">
+    <button type="button" data-carousel-prev aria-label="Geser ke kiri"
+            class="grid h-9 w-9 place-items-center rounded-full bg-brand-soft text-lg text-brand transition hover:bg-brand hover:text-white">←</button>
+    <button type="button" data-carousel-next aria-label="Geser ke kanan"
+            class="grid h-9 w-9 place-items-center rounded-full bg-brand-soft text-lg text-brand transition hover:bg-brand hover:text-white">→</button>
+  </div>
+{% endmacro %}
 {% block body %}
 {% include "components/navbar.html" %}
 
 <main>
-  <!-- HERO -->
-  <section class="bg-gradient-to-b from-hero to-white pt-8">
-    <div class="mx-auto max-w-[1100px] px-5">
-      {% with messages = get_flashed_messages(with_categories=true) %}
-        {% for cat, msg in messages %}
-        <div class="mb-4 rounded-lg border border-green-200 bg-green-50 px-3 py-2 text-sm text-green-700">{{ msg }}</div>
-        {% endfor %}
-      {% endwith %}
+  {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+    <div class="mx-auto max-w-[1440px] px-4 pt-4 sm:px-8">
+      {% for cat, msg in messages %}
+      <div class="mb-2 rounded-lg border border-green-200 bg-green-50 px-4 py-3 text-sm text-green-700">{{ msg }}</div>
+      {% endfor %}
+    </div>
+    {% endif %}
+  {% endwith %}
 
-      <h1 class="mt-8 text-[clamp(3.4rem,13vw,7.2rem)] font-semibold leading-none tracking-tighter text-white [-webkit-text-stroke:3px_#ff9a1f] [paint-order:stroke_fill] [text-shadow:0_4px_0_#ff9a1f]">
-        nineteen.
-      </h1>
-      <p class="ml-[clamp(90px,34vw,300px)] -mt-1.5 text-[clamp(1.4rem,5vw,2.6rem)] font-semibold tracking-tight text-accent">studios</p>
-
-      <h2 class="mb-1.5 mt-12 text-[clamp(1.2rem,3.5vw,1.6rem)] font-semibold text-brand">Kenapa nineteen.?</h2>
-      <p class="mb-7 max-w-[640px] text-[clamp(1rem,2.6vw,1.3rem)] leading-relaxed tracking-wider text-white">
-        karena kami menyediakan berbagai jasa yang memudahkan kehidupan anda sehari-hari
-      </p>
-
-      <!-- Panel kategori: ikon kategori dan tile kategori -->
-      <div id="categoryPanel" class="relative z-10 -mb-[60px] rounded-xl bg-white p-4 text-black shadow-xl sm:p-6">
-        {% if category_icons %}
-        <ul class="mb-6 grid grid-cols-3 gap-x-2 gap-y-5 text-center text-[10px] font-semibold leading-tight sm:grid-cols-4 sm:gap-x-3 md:grid-cols-6 lg:grid-cols-8">
-          {% for c in category_icons %}
-          <li>
-            <a href="/jasa?kategori={{ c.id }}" aria-label="Lihat jasa kategori {{ c.name }}" class="group flex h-full min-w-0 flex-col items-center justify-start gap-1.5 rounded-lg px-1 py-2 transition hover:bg-slate-50 hover:text-brand focus-visible:bg-slate-50">
-              {% if c.logo %}
-              <img src="{{ c.logo | media_url }}" alt="" loading="lazy" class="h-11 w-11 shrink-0 rounded-full object-contain transition duration-200 group-hover:scale-110 sm:h-12 sm:w-12">
-              {% else %}
-              <span class="flex h-11 w-11 shrink-0 items-center justify-center text-3xl text-accent transition duration-200 group-hover:scale-110 sm:h-12 sm:w-12">{{ c.name[:1] | upper }}</span>
-              {% endif %}
-              <span class="line-clamp-2 min-h-[2.5em] w-full break-words">{{ c.name }}</span>
-            </a>
-          </li>
-          {% endfor %}
-        </ul>
-        {% else %}
-        <p class="mb-6 text-center text-sm text-slate-500">Kategori jasa akan muncul di sini.</p>
-        {% endif %}
-
-        {% if category_tiles %}
-        <ul class="grid grid-cols-2 gap-3 sm:gap-4 md:grid-cols-3 xl:grid-cols-4">
-          {% for c in category_tiles %}
-          <li>
-            <a href="/jasa?kategori={{ c.id }}" aria-label="Lihat jasa kategori {{ c.name }}" class="group relative flex h-[112px] min-w-0 items-end overflow-hidden rounded-lg bg-gradient-to-b from-sky-300 via-emerald-700 to-green-900 shadow-sm transition duration-200 hover:-translate-y-0.5 hover:shadow-md sm:h-[125px] lg:h-[135px]">
-              {% if c.cover %}
-              <img src="{{ c.cover | media_url }}" alt="" loading="lazy"
-                   class="absolute inset-0 h-full w-full object-cover transition duration-500 group-hover:scale-105" onerror="this.remove()">
-              {% endif %}
-              <span class="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent"></span>
-              <span class="relative w-full bg-gradient-to-t from-black/65 to-transparent p-2.5 pt-6 text-[11px] font-semibold leading-snug text-white [text-shadow:0_1px_3px_#000]">{{ c.name }}</span>
-            </a>
-          </li>
-          {% endfor %}
-        </ul>
-        {% else %}
-        <p class="rounded-lg border border-dashed border-slate-200 p-6 text-center text-sm text-slate-500">
-          Belum ada kategori yang tersedia.
+  <!-- HERO: latar biru muda, judul biru, bulatan kuning, maskot naga -->
+  <section class="relative isolate overflow-hidden bg-gradient-to-br from-brand-soft via-[#F4F8FF] to-white">
+    <div aria-hidden="true" class="absolute -left-16 top-24 -z-10 h-40 w-40 rounded-full bg-blue-200/50 blur-2xl"></div>
+    <div class="mx-auto grid max-w-[1440px] items-center gap-8 px-4 py-14 sm:px-8 lg:grid-cols-2 lg:py-20">
+      <div class="relative">
+        <span aria-hidden="true" class="absolute -top-6 right-4 h-20 w-20 rounded-full bg-sun sm:right-24 sm:h-28 sm:w-28"></span>
+        <p class="relative mb-4 inline-flex rounded-full bg-white px-4 py-1.5 text-xs font-bold text-brand shadow-sm">nineteen. studios</p>
+        <h1 class="relative text-[clamp(2.6rem,7vw,5rem)] font-extrabold leading-[1.05] tracking-tight text-brand-dark">
+          Jasa terbaik,<br>tanpa batas.
+        </h1>
+        <p class="relative mt-5 max-w-md text-base text-ink/70 sm:text-lg">
+          Kami menyediakan berbagai jasa yang memudahkan kehidupan Anda sehari-hari, dari seller terpercaya.
         </p>
-        {% endif %}
+        <div class="relative mt-8 flex flex-wrap gap-3">
+          <a href="/jasa" class="rounded-xl bg-brand px-7 py-3.5 text-[15px] font-bold text-white shadow-lg shadow-blue-500/30 transition hover:bg-brand-dark">Jelajahi Jasa</a>
+          <a href="#seller" class="rounded-xl border border-brand/30 bg-white px-7 py-3.5 text-[15px] font-bold text-brand transition hover:bg-brand-soft">Kenali Seller</a>
+        </div>
+      </div>
+      <div class="relative mx-auto w-full max-w-[560px]">
+        <img src="{{ url_for('static', filename='img/mascot-login.webp') }}" alt="Maskot nineteen. menunjukkan jempol"
+             class="w-full rounded-3xl object-cover shadow-xl shadow-blue-900/10" width="900" height="600">
       </div>
     </div>
   </section>
 
+  <!-- KATEGORI PILIHAN (ikon) -->
+  <section id="kategori-pilihan" class="mx-auto max-w-[1440px] px-4 pt-14 sm:px-8">
+    <h2 class="mb-6 text-[22px] font-extrabold">Kategori Pilihan</h2>
+    {% if category_icons %}
+    <ul class="grid grid-cols-3 gap-x-2 gap-y-6 text-center text-xs font-medium sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-8">
+      {% for c in category_icons %}
+      <li>
+        <a href="/jasa?kategori={{ c.id }}" aria-label="Lihat jasa kategori {{ c.name }}" class="group flex h-full min-w-0 flex-col items-center gap-2">
+          {% if c.logo %}
+          <img src="{{ c.logo | media_url }}" alt="" loading="lazy"
+               class="h-16 w-16 rounded-full bg-brand-soft object-contain p-3 transition duration-200 group-hover:bg-blue-100 group-hover:scale-105 sm:h-[72px] sm:w-[72px]">
+          {% else %}
+          <span class="grid h-16 w-16 place-items-center rounded-full bg-brand-soft text-2xl font-extrabold text-brand transition duration-200 group-hover:bg-sun group-hover:text-ink sm:h-[72px] sm:w-[72px]">{{ c.name[:1] | upper }}</span>
+          {% endif %}
+          <span class="line-clamp-2 w-full break-words">{{ c.name }}</span>
+        </a>
+      </li>
+      {% endfor %}
+    </ul>
+    {% else %}
+    <p class="rounded-2xl bg-brand-soft p-8 text-center text-sm text-ink/60">Kategori jasa akan muncul di sini.</p>
+    {% endif %}
+  </section>
+
   <!-- JASA PALING POPULER -->
-  <section id="populer" class="scroll-mt-6 pt-24">
-    <div class="mx-auto max-w-[1100px] px-5">
-      <h2 class="mb-5 text-[22px] font-semibold">Jasa paling populer</h2>
-      {% if popular %}
-      <ul class="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
-        {% for s in popular %}
-        <li class="flex min-w-0 flex-col">{{ service_card(s) }}</li>
-        {% endfor %}
-      </ul>
-      {% else %}
-      <p class="rounded-md border border-dashed border-slate-300 p-8 text-center text-sm text-slate-500">
-        Belum ada jasa yang tersedia. Cek lagi nanti.
-      </p>
-      {% endif %}
+  <section id="populer" class="mx-auto max-w-[1440px] scroll-mt-20 px-4 pt-16 sm:px-8">
+    <div class="mb-5 flex items-center justify-between">
+      <h2 class="text-[22px] font-extrabold">Jasa Paling Populer</h2>
+      {% if popular %}{{ arrows() }}{% endif %}
     </div>
+    {{ carousel(popular, "Belum ada jasa yang tersedia. Cek lagi nanti.") }}
+  </section>
+
+  <!-- CARI BERDASARKAN SELLER: kartu orang, klik -> /seller/<id> (profil ala LinkedIn) -->
+  <section id="seller" class="mx-auto max-w-[1440px] scroll-mt-20 px-4 pt-16 sm:px-8">
+    <div class="mb-5 flex items-end justify-between gap-4">
+      <div>
+        <h2 class="text-[22px] font-extrabold">Cari Berdasarkan Seller</h2>
+        <p class="mt-1 text-sm text-ink/60">Kenali penyedia jasa, lihat pengalaman dan portofolionya.</p>
+      </div>
+    </div>
+    {% if sellers %}
+    <ul class="grid grid-cols-2 gap-3 sm:gap-5 md:grid-cols-3 xl:grid-cols-4">
+      {% for t in sellers %}
+      <li>
+        <a href="{{ url_for('sellers.profile', seller_id=t.id) }}" aria-label="Lihat profil {{ t.name }}"
+           class="group relative flex h-full flex-col items-center overflow-hidden rounded-2xl border border-brand/10 bg-white p-5 text-center shadow-sm transition duration-300 hover:-translate-y-1 hover:shadow-xl hover:shadow-blue-900/10">
+          <span aria-hidden="true" class="absolute inset-x-0 top-0 h-16 bg-gradient-to-r from-brand-soft to-blue-100"></span>
+          {% if t.is_top %}
+          <span class="absolute right-3 top-3 rounded-full bg-sun px-2.5 py-1 text-[10px] font-extrabold text-ink">TOP SELLER</span>
+          {% endif %}
+          {% if t.avatar %}
+          <img src="{{ t.avatar | media_url }}" alt="" loading="lazy"
+               class="relative mt-4 h-20 w-20 rounded-full border-4 border-white bg-brand-soft object-cover shadow-md sm:h-24 sm:w-24">
+          {% else %}
+          <span class="relative mt-4 grid h-20 w-20 place-items-center rounded-full border-4 border-white bg-brand text-3xl font-extrabold text-white shadow-md sm:h-24 sm:w-24">{{ t.name[:1] | upper }}</span>
+          {% endif %}
+          <h3 class="mt-3 line-clamp-1 text-[15px] font-extrabold">{{ t.name }}</h3>
+          <p class="mt-0.5 line-clamp-2 min-h-[2.6em] text-xs text-ink/60">{{ t.headline or "Penyedia jasa di nineteen." }}</p>
+          {% if t.location %}<p class="mt-1 text-[11px] text-ink/50">📍 {{ t.location }}</p>{% endif %}
+          <p class="mt-3 flex items-center gap-3 text-xs font-semibold">
+            <span><span class="text-sun">★</span> {{ t.rating if t.rating else "Baru" }}</span>
+            <span class="text-ink/30">|</span>
+            <span>{{ t.done }} selesai</span>
+          </p>
+          <span class="mt-4 w-full rounded-xl bg-brand-soft py-2 text-xs font-bold text-brand transition group-hover:bg-brand group-hover:text-white">Lihat profil</span>
+        </a>
+      </li>
+      {% endfor %}
+    </ul>
+    {% else %}
+    <p class="rounded-2xl bg-brand-soft p-10 text-center text-sm text-ink/60">Belum ada seller yang tersedia.</p>
+    {% endif %}
   </section>
 
   <!-- JASA TERJANGKAU -->
-  <section id="terjangkau" class="scroll-mt-6 pt-8">
-    <div class="mx-auto max-w-[1100px] px-5">
-      <h2 class="mb-5 text-[22px] font-semibold">Jasa terjangkau</h2>
-      {% if affordable %}
-      <ul class="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
-        {% for s in affordable %}
-        <li class="flex min-w-0 flex-col">{{ service_card(s) }}</li>
-        {% endfor %}
-      </ul>
-      {% else %}
-      <p class="rounded-md border border-dashed border-slate-300 p-8 text-center text-sm text-slate-500">
-        Belum ada jasa yang tersedia. Cek lagi nanti.
-      </p>
-      {% endif %}
+  <section id="terjangkau" class="mx-auto max-w-[1440px] scroll-mt-20 px-4 pt-16 sm:px-8">
+    <div class="mb-5 flex items-center justify-between">
+      <h2 class="text-[22px] font-extrabold">Jasa Terjangkau</h2>
+      {% if affordable %}{{ arrows() }}{% endif %}
     </div>
+    {{ carousel(affordable, "Belum ada jasa yang tersedia. Cek lagi nanti.") }}
   </section>
 
-  <!-- KATEGORI PEKERJAAN -->
-  <section id="kategori" class="scroll-mt-6 pt-8">
-    <div class="mx-auto max-w-[1100px] px-5">
-      <h2 class="mb-5 text-[22px] font-semibold">Berbagai Kategori Pekerjaan di nineteen.</h2>
-      {% if categories %}
-      <ul class="grid gap-x-10 gap-y-6 px-4 sm:grid-cols-2 lg:grid-cols-3">
-        {% for c in categories %}
-        <li>
-          <a href="/jasa?kategori={{ c.id }}" class="block hover:text-brand">
-            <h3 class="mb-1.5 text-[15px] font-semibold">{{ c.name }}</h3>
-            <p class="text-xs leading-relaxed text-slate-600">{{ c.count }} jasa tersedia</p>
-          </a>
-        </li>
-        {% endfor %}
-      </ul>
-      {% else %}
-      <p class="text-sm text-slate-500">Kategori akan muncul setelah seller menambahkan jasa.</p>
-      {% endif %}
-    </div>
+  <!-- SEMUA KATEGORI -->
+  <section id="kategori" class="mx-auto max-w-[1440px] scroll-mt-20 px-4 pt-16 sm:px-8">
+    <h2 class="mb-6 text-[22px] font-extrabold">Berbagai Kategori Pekerjaan di nineteen.</h2>
+    {% if categories %}
+    <ul class="grid gap-x-10 gap-y-6 border-t border-brand/10 pt-8 sm:grid-cols-2 lg:grid-cols-4">
+      {% for c in categories %}
+      <li>
+        <a href="/jasa?kategori={{ c.id }}" class="block hover:text-brand">
+          <h3 class="text-[15px] font-medium">{{ c.name }}</h3>
+          <p class="mt-0.5 text-[13px] text-ink/60">{{ c.count }} jasa tersedia</p>
+        </a>
+      </li>
+      {% endfor %}
+    </ul>
+    {% else %}
+    <p class="text-sm text-ink/60">Kategori akan muncul setelah seller menambahkan jasa.</p>
+    {% endif %}
   </section>
 </main>
 
 {% include "components/footer.html" %}
 
 <button type="button" id="backToTop" aria-label="Kembali ke atas"
-        class="fixed bottom-[calc(20px+env(safe-area-inset-bottom))] right-3.5 z-50 grid h-9 w-9 place-items-center rounded-full border-2 border-gray-900 bg-white text-base text-gray-900 shadow">
+        class="fixed bottom-[calc(20px+env(safe-area-inset-bottom))] right-4 z-50 grid h-10 w-10 place-items-center rounded-full bg-brand text-base text-white shadow-lg shadow-blue-500/30 transition hover:bg-brand-dark">
   ↑
 </button>
 
 <script>
   (() => {
     const backToTop = document.getElementById('backToTop');
-    if (backToTop) {
-      backToTop.addEventListener('click', () => window.scrollTo({ top: 0, behavior: 'smooth' }));
-    }
+    if (backToTop) backToTop.addEventListener('click', () => window.scrollTo({ top: 0, behavior: 'smooth' }));
+
+    document.querySelectorAll('section').forEach(section => {
+      const track = section.querySelector('[data-carousel]');
+      if (!track) return;
+      const step = () => Math.max(track.clientWidth * 0.8, 240);
+      const prev = section.querySelector('[data-carousel-prev]');
+      const next = section.querySelector('[data-carousel-next]');
+      if (prev) prev.addEventListener('click', () => track.scrollBy({ left: -step(), behavior: 'smooth' }));
+      if (next) next.addEventListener('click', () => track.scrollBy({ left: step(), behavior: 'smooth' }));
+    });
   })();
 </script>
 {% endblock %}
