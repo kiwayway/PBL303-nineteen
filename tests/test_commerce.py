@@ -276,67 +276,62 @@ def test_non_admin_cannot_decide_payment(app):
     assert order.status == "waiting"
 
 
-def test_seller_can_complete_approved_own_order(app):
+def test_seller_cannot_complete_own_order_directly(app):
+    """Escrow: hanya buyer (atau waktu) yang bisa menyelesaikan pesanan, bukan seller."""
     seller = user("seller")
     customer = user("customer")
-
     order, item = fixture_order_item(seller, customer, "approved")
 
     client = client_for(app, seller)
     csrf = token(client, "/seller/pesanan")
+    response = client.post(f"/seller/pesanan/{item.id}/selesai", data={"_csrf": csrf})
 
+    assert response.status_code == 404  # rutenya sudah tidak ada
+    db.session.refresh(item)
+    assert item.status == "in_progress" and item.completed_at is None
+
+
+def test_seller_can_deliver_approved_own_order(app):
+    seller = user("seller")
+    customer = user("customer")
+    order, item = fixture_order_item(seller, customer, "approved")
+
+    client = client_for(app, seller)
+    csrf = token(client, "/seller/pesanan")
     response = client.post(
-        f"/seller/pesanan/{item.id}/selesai",
-        data={"_csrf": csrf},
+        f"/seller/pesanan/{item.id}/kirim-hasil",
+        data={"_csrf": csrf, "note": "File logo final sudah dikirim.", "url": "https://drive.example/logo"},
     )
 
     assert response.status_code == 302
-
     db.session.refresh(item)
-    assert item.status == "completed"
-    assert item.completed_at is not None
+    assert item.status == "delivered"
+    assert item.delivered_at is not None and item.auto_complete_at is not None
+    assert item.completed_at is None  # belum selesai sampai buyer menerima
 
 
-def test_seller_cannot_complete_unapproved_or_other_seller_order(app):
+def test_seller_cannot_deliver_unapproved_or_other_seller_order(app):
     seller_a = user("seller")
     seller_b = user("seller")
     customer = user("customer")
 
-    # Pesanan seller A belum disetujui.
-    pending_order, pending_item = fixture_order_item(
-        seller_a, customer, "waiting"
-    )
-
+    pending_order, pending_item = fixture_order_item(seller_a, customer, "waiting")
     client_a = client_for(app, seller_a)
     csrf_a = token(client_a, "/seller/pesanan")
-
-    response = client_a.post(
-        f"/seller/pesanan/{pending_item.id}/selesai",
-        data={"_csrf": csrf_a},
-    )
-
-    assert response.status_code == 409
-
+    client_a.post(f"/seller/pesanan/{pending_item.id}/kirim-hasil",
+                  data={"_csrf": csrf_a, "note": "Catatan pengiriman cukup panjang."})
     db.session.refresh(pending_item)
-    assert pending_item.status == "in_progress"
+    assert pending_item.status == "in_progress"  # belum dibayar
 
-    # Seller B tidak boleh menyelesaikan pesanan milik seller A.
-    approved_order, approved_item = fixture_order_item(
-        seller_a, customer, "approved"
-    )
-
+    approved_order, approved_item = fixture_order_item(seller_a, customer, "approved")
     client_b = client_for(app, seller_b)
     csrf_b = token(client_b, "/seller/pesanan")
-
-    response = client_b.post(
-        f"/seller/pesanan/{approved_item.id}/selesai",
-        data={"_csrf": csrf_b},
-    )
-
+    response = client_b.post(f"/seller/pesanan/{approved_item.id}/kirim-hasil",
+                             data={"_csrf": csrf_b, "note": "Catatan pengiriman cukup panjang."})
     assert response.status_code == 404
-
     db.session.refresh(approved_item)
     assert approved_item.status == "in_progress"
+
 
 def test_seller_only_sees_own_order_items(app):
     seller_a = user("seller")

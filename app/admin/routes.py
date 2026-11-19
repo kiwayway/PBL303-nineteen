@@ -46,6 +46,12 @@ def _admin_user():
     return current_user()
 
 
+@bp.context_processor
+def _admin_badges():
+    """Variabel yang otomatis tersedia di semua template admin."""
+    return {"pending_seller_apps": SellerApplication.query.filter_by(status="submitted").count()}
+
+
 @bp.get("/")
 def dashboard():
     stats = {

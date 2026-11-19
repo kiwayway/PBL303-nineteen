@@ -9,7 +9,7 @@
 {% if application.admin_note %}<p class="mb-4 rounded-xl border border-orange-200 bg-orange-50 p-3 text-sm text-orange-900"><b>Catatan admin:</b> {{ application.admin_note }}</p>{% endif %}
 
 <div class="grid gap-5 lg:grid-cols-2">
-  <section class="rounded-2xl border bg-white p-5 shadow-sm">
+  <section class="rounded-2xl border border-brand/10 bg-white shadow-sm shadow-blue-900/5 p-5 shadow-sm">
     <h2 class="mb-3 font-bold">Data pribadi</h2>
     <div class="mb-3 flex items-center gap-3">
       {% if applicant.avatar %}<img src="{{ applicant.avatar | media_url }}" alt="Foto {{ applicant.name }}" class="h-16 w-16 rounded-full object-cover">
@@ -25,7 +25,7 @@
     </dl>
   </section>
 
-  <section class="rounded-2xl border bg-white p-5 shadow-sm">
+  <section class="rounded-2xl border border-brand/10 bg-white shadow-sm shadow-blue-900/5 p-5 shadow-sm">
     <h2 class="mb-3 font-bold">Rekening pencairan</h2>
     {% if payout %}
     <p class="text-sm"><b>{{ payout.bank_name }}</b> · {{ payout.masked_number }}</p>
@@ -40,7 +40,7 @@
     <p class="mt-2 whitespace-pre-line text-sm text-slate-700">{{ application.service_plan or "" }}</p>
   </section>
 
-  <section class="rounded-2xl border bg-white p-5 shadow-sm">
+  <section class="rounded-2xl border border-brand/10 bg-white shadow-sm shadow-blue-900/5 p-5 shadow-sm">
     <h2 class="mb-3 font-bold">Pengalaman</h2>
     {% for e in applicant.experiences %}
     <div class="mb-3 text-sm"><p class="font-semibold">{{ e.position }}</p><p class="text-slate-600">{{ e.institution }}{% if e.period %} · {{ e.period }}{% endif %}</p>
@@ -48,7 +48,7 @@
     {% else %}<p class="text-sm text-slate-500">Belum ada.</p>{% endfor %}
   </section>
 
-  <section class="rounded-2xl border bg-white p-5 shadow-sm">
+  <section class="rounded-2xl border border-brand/10 bg-white shadow-sm shadow-blue-900/5 p-5 shadow-sm">
     <h2 class="mb-3 font-bold">Portofolio</h2>
     {% for p in applicant.projects %}
     <div class="mb-3 text-sm"><p class="font-semibold">{{ p.title }}</p>
@@ -59,7 +59,7 @@
   </section>
 </div>
 
-<section class="mt-5 rounded-2xl border bg-white p-5 shadow-sm">
+<section class="mt-5 rounded-2xl border border-brand/10 bg-white shadow-sm shadow-blue-900/5 p-5 shadow-sm">
   <h2 class="mb-3 font-bold">Checklist syarat</h2>
   <ul class="grid gap-1.5 text-sm sm:grid-cols-2">
     {% for i in items %}<li class="{% if i.ok %}text-emerald-700{% else %}text-red-700{% endif %}">{{ "✓" if i.ok else "✗" }} {{ i.label }}</li>{% endfor %}
@@ -67,7 +67,7 @@
 </section>
 
 {% if application.status == "submitted" %}
-<section class="mt-5 rounded-2xl border bg-white p-5 shadow-sm">
+<section class="mt-5 rounded-2xl border border-brand/10 bg-white shadow-sm shadow-blue-900/5 p-5 shadow-sm">
   <h2 class="mb-3 font-bold">Keputusan</h2>
   <form method="post" action="{{ url_for('admin.seller_application_decide', app_id=application.id) }}" class="space-y-3">
     <input type="hidden" name="_csrf" value="{{ csrf_token() }}">

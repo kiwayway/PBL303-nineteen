@@ -13,14 +13,25 @@ from .auditlog import audit
 
 bp = Blueprint("commerce", __name__)
 
+BUYER_ROLES = ("customer", "seller")  # seller juga boleh membeli (kecuali jasanya sendiri)
+
 def login_required(fn):
+    """Rute pembeli: customer dan seller boleh; admin tidak."""
     @wraps(fn)
     def wrapped(*a, **kw):
         user=current_user()
         if not user: return redirect(url_for("auth.login", next=request.path))
-        if user.role != "customer": abort(403)
+        if user.role not in BUYER_ROLES: abort(403)
         return fn(*a, **kw)
     return wrapped
+
+def _purge_own_items(cart, user):
+    """Hapus dari keranjang paket milik user sendiri. Mengembalikan jumlah yang dihapus."""
+    own=[i for i in CartItem.query.filter_by(cart_id=cart.id).options(joinedload(CartItem.package).joinedload(ServicePackage.service)).all()
+         if i.package and i.package.service.seller_id==user.id]
+    for i in own: db.session.delete(i)
+    if own: db.session.commit(); flash("Jasamu sendiri dikeluarkan dari keranjang. Kamu tidak bisa membeli jasa milikmu.","error")
+    return len(own)
 
 def _cart(user):
     cart=Cart.query.filter_by(customer_id=user.id).first()
@@ -31,7 +42,7 @@ def _cart(user):
 @bp.get("/keranjang")
 @login_required
 def cart():
-    c=_cart(current_user())
+    c=_cart(current_user()); _purge_own_items(c, current_user())
     items=CartItem.query.filter_by(cart_id=c.id).options(joinedload(CartItem.package).joinedload(ServicePackage.service)).all()
     total=sum(i.package.price for i in items if i.package and i.package.is_active and i.package.service.is_active)
     return render_template("commerce/cart.html", items=items, total=total)
@@ -40,6 +51,9 @@ def cart():
 @login_required
 def cart_add(package_id):
     p=ServicePackage.query.join(Service).filter(ServicePackage.id==package_id, ServicePackage.is_active.is_(True), Service.is_active.is_(True)).first_or_404()
+    if p.service.seller_id==current_user().id:
+        flash("Kamu tidak bisa membeli jasamu sendiri.","error")
+        return redirect(url_for("catalog.detail",service_id=p.service_id))
     c=_cart(current_user())
     if not CartItem.query.filter_by(cart_id=c.id,package_id=p.id).first():
         db.session.add(CartItem(cart_id=c.id,package_id=p.id)); db.session.commit()
@@ -56,9 +70,9 @@ def cart_remove(item_id):
 @bp.route("/checkout", methods=["GET","POST"])
 @login_required
 def checkout():
-    user=current_user(); c=_cart(user)
+    user=current_user(); c=_cart(user); _purge_own_items(c, user)
     items=CartItem.query.filter_by(cart_id=c.id).options(joinedload(CartItem.package).joinedload(ServicePackage.service)).all()
-    valid=[i for i in items if i.package and i.package.is_active and i.package.service.is_active and i.package.service.seller.is_active]
+    valid=[i for i in items if i.package and i.package.is_active and i.package.service.is_active and i.package.service.seller.is_active and i.package.service.seller_id!=user.id]
     if not valid: flash("Keranjang kosong atau paket tidak lagi tersedia.","error"); return redirect(url_for("commerce.cart"))
     total=sum(i.package.price for i in valid)
     if request.method=="POST":
@@ -81,8 +95,10 @@ def checkout():
 @bp.get("/pesanan/<int:order_id>/pembayaran")
 @login_required
 def payment(order_id):
+    from .finance import midtrans
     order=Order.query.filter_by(id=order_id,customer_id=current_user().id).first_or_404()
-    return render_template("commerce/payment.html",order=order,
+    return render_template("commerce/payment.html",order=order,midtrans_enabled=midtrans.enabled(),
+        commission_percent=current_app.config.get("COMMISSION_BPS",1000)/100,
         bank_name=current_app.config.get("PAYMENT_BANK_NAME",""),
         bank_account_name=current_app.config.get("PAYMENT_BANK_ACCOUNT_NAME",""),
         bank_account_number=current_app.config.get("PAYMENT_BANK_ACCOUNT_NUMBER",""))
@@ -90,6 +106,8 @@ def payment(order_id):
 @bp.post("/pesanan/<int:order_id>/bukti")
 @login_required
 def payment_proof(order_id):
+    from .finance import midtrans
+    if midtrans.enabled(): abort(404)  # pembayaran online aktif: jalur bukti manual ditutup
     order=Order.query.filter_by(id=order_id,customer_id=current_user().id).first_or_404()
     if order.status not in ("pending","rejected"): abort(409)
     upload=request.files.get("proof")
@@ -161,7 +179,9 @@ def admin_decision(order_id):
     decision=request.form.get("decision")
     reason=request.form.get("reason","").strip()
     if order.status!="waiting" or decision not in ("approve","reject"): abort(409)
-    if decision=="approve": order.status="approved"; order.note=None
+    if decision=="approve":
+        from .finance.service import mark_order_paid
+        mark_order_paid(order)
     else:
         if not 5<=len(reason)<=255: flash("Alasan penolakan 5–255 karakter.","error"); return redirect(url_for("admin.orders"))
         order.status="rejected"; order.note=reason
@@ -178,19 +198,10 @@ def seller_orders():
           .options(joinedload(OrderItem.order).joinedload(Order.customer),
                    joinedload(OrderItem.package).joinedload(ServicePackage.service))
           .order_by(OrderItem.id.desc()).limit(200).all())
-    return render_template("commerce/seller_orders.html",rows=rows,user=user)
-
-@bp.post("/seller/pesanan/<int:item_id>/selesai")
-def seller_complete(item_id):
-    user=current_user()
-    if not user: return redirect(url_for("auth.login"))
-    if user.role!="seller": abort(403)
-    item=OrderItem.query.filter_by(id=item_id,seller_id=user.id).first_or_404()
-    if item.order.status!="approved" or item.status!="in_progress": abort(409)
-    item.status="completed"; item.completed_at=utcnow()
-    db.session.commit(); audit("seller_order_item_completed",user_id=user.id,order_item_id=item.id)
-    flash("Pengerjaan ditandai selesai.","success")
-    return redirect(url_for("commerce.seller_orders"))
+    from .models import LedgerEntry
+    ids=[r.id for r in rows]
+    avail={e.order_item_id:e.available_at for e in LedgerEntry.query.filter(LedgerEntry.kind=="earning",LedgerEntry.order_item_id.in_(ids))} if ids else {}
+    return render_template("commerce/seller_orders.html",rows=rows,user=user,avail=avail)
 
 
 # Seller-owned service management. Every object lookup is scoped to the authenticated seller.

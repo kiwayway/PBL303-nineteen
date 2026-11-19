@@ -1,6 +1,7 @@
 from datetime import datetime, timedelta, timezone
 
-from sqlalchemy import func
+from flask import current_app, has_app_context
+from sqlalchemy import event, func, select
 from werkzeug.security import check_password_hash, generate_password_hash
 
 from .extensions import db
@@ -8,7 +9,10 @@ from .extensions import db
 
 ROLES = ("admin", "seller", "customer")
 PAYMENT_STATUSES = ("pending", "waiting", "approved", "rejected")
-ITEM_STATUSES = ("in_progress", "completed")
+ITEM_STATUSES = ("in_progress", "delivered", "completed")
+PAYMENT_TX_STATUSES = ("pending", "paid", "failed", "expired", "refunded")
+LEDGER_KINDS = ("earning", "commission")
+DEFAULT_COMMISSION_BPS = 1000  # 10,00%
 SELLER_APP_STATUSES = ("draft", "submitted", "needs_revision", "approved", "rejected")
 
 TOP_SELLER_MIN_ORDERS = 5
@@ -292,6 +296,7 @@ class Order(db.Model):
     proof_path = db.Column(db.String(255))
     note = db.Column(db.String(255))  # alasan ditolak
     customer_note = db.Column(db.String(255))
+    paid_at = db.Column(db.DateTime(timezone=True))
     created_at = db.Column(db.DateTime(timezone=True), nullable=False, default=utcnow)
 
     customer = db.relationship("User")
@@ -315,6 +320,16 @@ class OrderItem(db.Model):
     duration_days = db.Column(db.Integer)
     status = db.Column(db.String(11), nullable=False, default="in_progress", server_default="in_progress")
     completed_at = db.Column(db.DateTime(timezone=True))
+    # Snapshot komisi saat checkout (basis point: 1000 = 10%). Komisi baru tidak mengubah order lama.
+    fee_bps = db.Column(db.Integer, nullable=False, server_default="1000")
+    platform_fee = db.Column(db.Integer, nullable=False, server_default="0")
+    seller_net = db.Column(db.Integer, nullable=False, server_default="0")
+    # Siklus pengerjaan: dibayar -> due_at (batas) -> delivered_at -> (terima / auto_complete_at) -> completed_at
+    due_at = db.Column(db.DateTime(timezone=True))
+    delivered_at = db.Column(db.DateTime(timezone=True))
+    auto_complete_at = db.Column(db.DateTime(timezone=True))
+    delivery_note = db.Column(db.String(1000))
+    delivery_url = db.Column(db.String(255))
 
     package = db.relationship("ServicePackage")
     seller = db.relationship("User", foreign_keys=[seller_id])
@@ -462,3 +477,79 @@ class PayoutAccount(db.Model):
     @property
     def masked_number(self):
         return "•••• " + self.account_last4
+
+
+# ---------------------------------------------------------------- uang: komisi, pembayaran, ledger
+def compute_fee(price, bps):
+    """Komisi platform dibulatkan ke rupiah terdekat (setengah ke atas), murni aritmetika integer."""
+    fee = (price * bps + 5000) // 10000
+    return fee, price - fee
+
+
+@event.listens_for(OrderItem, "before_insert")
+def _snapshot_fee(mapper, connection, item):
+    """Setiap OrderItem baru: (1) seller tidak boleh membeli jasanya sendiri, (2) simpan snapshot komisi."""
+    buyer_id = connection.scalar(select(Order.customer_id).where(Order.id == item.order_id))
+    if buyer_id is not None and buyer_id == item.seller_id:
+        raise ValueError("Seller tidak boleh membeli jasanya sendiri.")
+    if item.platform_fee is None or item.seller_net is None:
+        bps = item.fee_bps
+        if bps is None:
+            bps = current_app.config.get("COMMISSION_BPS", DEFAULT_COMMISSION_BPS) if has_app_context() else DEFAULT_COMMISSION_BPS
+        item.fee_bps = bps
+        item.platform_fee, item.seller_net = compute_fee(item.price, bps)
+
+
+class Payment(db.Model):
+    """Satu percobaan pembayaran Midtrans untuk sebuah Order. Order bisa punya banyak percobaan."""
+    __tablename__ = "payments"
+    __table_args__ = (
+        db.CheckConstraint(_in("status", PAYMENT_TX_STATUSES), name="ck_payments_status"),
+    )
+
+    id = db.Column(db.Integer, primary_key=True)
+    order_id = db.Column(db.ForeignKey("orders.id"), nullable=False, index=True)
+    midtrans_order_id = db.Column(db.String(50), nullable=False, unique=True)
+    gross_amount = db.Column(db.Integer, nullable=False)
+    status = db.Column(db.String(8), nullable=False, default="pending", server_default="pending")
+    snap_token = db.Column(db.String(64))
+    redirect_url = db.Column(db.String(255))
+    payment_type = db.Column(db.String(30))
+    transaction_status = db.Column(db.String(20))  # status mentah dari Midtrans
+    fraud_status = db.Column(db.String(20))
+    transaction_id = db.Column(db.String(64))
+    paid_at = db.Column(db.DateTime(timezone=True))
+    note = db.Column(db.String(255))
+    raw_response = db.Column(db.Text)  # respons terakhir dari Midtrans, untuk audit
+    created_at = db.Column(db.DateTime(timezone=True), nullable=False, default=utcnow)
+    updated_at = db.Column(db.DateTime(timezone=True), nullable=False, default=utcnow, onupdate=utcnow)
+
+    order = db.relationship(
+        "Order", backref=db.backref("payments", order_by="Payment.id", cascade="all, delete-orphan"),
+    )
+
+
+class LedgerEntry(db.Model):
+    """Buku besar. Saldo TIDAK disimpan di kolom mana pun; selalu dihitung dari baris-baris ini.
+
+    earning    : bagian bersih seller saat pesanan selesai (bisa ditarik setelah available_at)
+    commission : komisi platform (user_id kosong)
+    Satu pesanan hanya boleh menghasilkan satu earning dan satu commission (unique), jadi dana
+    tidak mungkin dirilis dua kali.
+    """
+    __tablename__ = "ledger_entries"
+    __table_args__ = (
+        db.CheckConstraint(_in("kind", LEDGER_KINDS), name="ck_ledger_entries_kind"),
+        db.UniqueConstraint("order_item_id", "kind", name="uq_ledger_item_kind"),
+    )
+
+    id = db.Column(db.Integer, primary_key=True)
+    kind = db.Column(db.String(12), nullable=False)
+    user_id = db.Column(db.ForeignKey("users.id"), index=True)
+    order_item_id = db.Column(db.ForeignKey("order_items.id"), index=True)
+    amount = db.Column(db.Integer, nullable=False)
+    available_at = db.Column(db.DateTime(timezone=True))
+    created_at = db.Column(db.DateTime(timezone=True), nullable=False, default=utcnow)
+
+    user = db.relationship("User")
+    order_item = db.relationship("OrderItem")

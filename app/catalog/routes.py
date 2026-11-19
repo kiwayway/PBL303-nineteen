@@ -40,4 +40,11 @@ def detail(service_id):
         .filter(ServicePackage.service_id == service.id)
         .order_by(Review.created_at.desc()).limit(30).all())
     avg = service.avg_rating
-    return render_template("catalog/detail.html", user=current_user(), service=service, packages=packages, reviews=reviews, average=avg)
+    viewer = current_user()
+    block = None  # alasan pembeli tidak bisa memesan (None = boleh)
+    if viewer and viewer.id == service.seller_id:
+        block = "Ini jasamu sendiri, jadi tidak bisa kamu beli."
+    elif viewer and viewer.role not in ("customer", "seller"):
+        block = "Akun admin tidak dapat membeli jasa."
+    return render_template("catalog/detail.html", user=viewer, service=service, packages=packages, reviews=reviews,
+                           average=avg, buy_block=block)

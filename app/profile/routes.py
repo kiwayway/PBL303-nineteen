@@ -77,6 +77,8 @@ def order_state(order):
         return "pending", "Menunggu Verifikasi"
     if order.items and all(i.status == "completed" for i in order.items):
         return "done", "Selesai"
+    if any(i.status == "delivered" for i in order.items):
+        return "processing", "Hasil Dikirim"
     return "processing", "Diproses"
 
 
@@ -91,6 +93,8 @@ def _order_view(order):
             "seller": it.seller.name if it.seller else "-", "package": it.package.name,
             "duration": it.package.duration_days, "price": it.price,
             "done": it.status == "completed", "review": it.review,
+            "status": it.status, "delivered_at": it.delivered_at, "auto_complete_at": it.auto_complete_at,
+            "note": it.delivery_note, "url": it.delivery_url, "due_at": it.due_at,
         })
     return {
         "order": order, "id": order.id, "no": f"NS-{order.id:05d}", "state": code,
@@ -289,8 +293,8 @@ def order_detail(order_id):
     paid = order.status == "approved"
     steps = [
         ("Pesanan dibuat", True),
-        ("Pembayaran terverifikasi", paid),
-        ("Layanan diproses", paid),
+        ("Pembayaran diterima", paid),
+        ("Hasil dikirim", any(i["status"] in ("delivered", "completed") for i in view["items"])),
         ("Selesai", view["state"] == "done"),
     ]
     return _page("profile/order_detail.html", "orders", f"Pesanan {view['no']}", o=view,

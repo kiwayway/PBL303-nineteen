@@ -19,7 +19,7 @@
 <div class="mb-5 rounded-2xl border border-emerald-200 bg-emerald-50 p-5 text-emerald-900">
   <p class="font-bold">Selamat, kamu sudah menjadi seller!</p>
   <p class="mt-1 text-sm">Kelola jasamu di <a class="font-semibold underline" href="{{ url_for('commerce.seller_services') }}">Jasa Saya</a>, pantau
-    <a class="font-semibold underline" href="{{ url_for('commerce.seller_orders') }}">Pesanan Seller</a>, atau lihat
+    <a class="font-semibold underline" href="{{ url_for('commerce.seller_orders') }}">Orderan Saya</a>, atau lihat
     <a class="font-semibold underline" href="{{ url_for('sellers.profile', seller_id=user.id) }}">profil publikmu</a>.</p>
 </div>
 {% elif status == "submitted" %}
