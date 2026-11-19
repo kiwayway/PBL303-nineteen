@@ -157,3 +157,12 @@ def register_cli(app):
                                   rating=rating, comment=comment))
         db.session.commit()
         click.echo(f"Data demo dibuat. Buka /seller/{seller.id}")
+
+    @app.cli.command("auto-complete")
+    def auto_complete():
+        """Selesaikan otomatis pesanan yang hasilnya sudah dikirim dan melewati batas waktu.
+
+        Jalankan berkala (mis. tiap 15 menit lewat cron / service worker di docker-compose).
+        """
+        from .finance.service import auto_complete_due
+        click.echo(f"{auto_complete_due()} pesanan diselesaikan otomatis.")

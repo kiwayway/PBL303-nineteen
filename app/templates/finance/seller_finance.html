@@ -1,0 +1,50 @@
+{#
+  /seller/keuangan  ->  ringkasan uang seller.
+  Semua angka dihitung dari ledger (app/finance/ledger.py), bukan dari kolom saldo.
+#}
+{% extends "base.html" %}
+{% block title %}Keuangan · nineteen studios{% endblock %}
+{% block body %}
+{% include "components/navbar.html" %}
+<main class="mx-auto max-w-5xl px-4 py-10 sm:px-5">
+  <h1 class="text-3xl font-extrabold">Keuangan</h1>
+  <p class="mt-1 text-sm text-ink/60">Pembayaran buyer ditahan sistem, lalu dicairkan ke saldomu setelah pesanan selesai dan masa tunggu lewat.</p>
+
+  <div class="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+    {% for label, value, hint, tone in [
+      ('Total pendapatan', summary.income, 'Bersih, dari pesanan yang selesai', 'bg-blue-50 text-brand'),
+      ('Dana ditahan', summary.held, 'Pesanan dibayar, belum selesai', 'bg-amber-50 text-amber-700'),
+      ('Masa tunggu', summary.clearing, 'Selesai, belum bisa ditarik', 'bg-violet-50 text-violet-700'),
+      ('Saldo tersedia', summary.available, 'Siap ditarik', 'bg-emerald-50 text-emerald-700')
+    ] %}
+    <section class="rounded-2xl border border-brand/10 bg-white p-5 shadow-sm shadow-blue-900/5">
+      <span class="inline-block rounded-full px-2.5 py-1 text-[11px] font-bold {{ tone }}">{{ label }}</span>
+      <p class="mt-3 text-2xl font-extrabold">{{ value | rupiah }}</p>
+      <p class="mt-1 text-xs text-ink/50">{{ hint }}</p>
+    </section>
+    {% endfor %}
+  </div>
+  <p class="mt-3 text-sm text-ink/60">Total dicairkan ke rekening: <b>{{ summary.withdrawn | rupiah }}</b>. Penarikan dana tersedia di pembaruan berikutnya.</p>
+
+  <section class="mt-8 rounded-2xl border border-brand/10 bg-white p-5 shadow-sm shadow-blue-900/5">
+    <h2 class="font-extrabold">Riwayat pendapatan</h2>
+    <div class="mt-3 overflow-x-auto">
+    <table class="w-full min-w-[520px] text-left text-sm">
+      <thead class="text-xs uppercase tracking-wide text-ink/50"><tr><th class="py-2">Pesanan</th><th class="py-2">Jumlah</th><th class="py-2">Bisa ditarik</th></tr></thead>
+      <tbody>
+      {% for e in entries %}
+      <tr class="border-t border-brand/10">
+        <td class="py-3">{{ e.order_item.service_title or 'Jasa' }} <span class="text-xs text-ink/50">· Order #{{ e.order_item.order_id }}</span></td>
+        <td class="py-3 font-bold text-emerald-700">+{{ e.amount | rupiah }}</td>
+        <td class="py-3">{{ e.available_at | tgl if e.available_at else '-' }}</td>
+      </tr>
+      {% else %}
+      <tr><td colspan="3" class="py-8 text-center text-ink/50">Belum ada pendapatan.</td></tr>
+      {% endfor %}
+      </tbody>
+    </table>
+    </div>
+  </section>
+</main>
+{% include "components/footer.html" %}
+{% endblock %}

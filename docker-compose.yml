@@ -32,5 +32,19 @@ services:
     volumes:
       - .:/app
 
+  # Menyelesaikan otomatis pesanan yang hasilnya sudah dikirim dan tidak direspons buyer (escrow).
+  worker:
+    build: .
+    restart: unless-stopped
+    command: sh -c "sleep 45; while true; do flask --app wsgi auto-complete; sleep 900; done"
+    env_file: .env
+    environment:
+      DATABASE_URL: postgresql+psycopg2://nineteen:${DB_PASSWORD}@db:5432/nineteen_db
+    depends_on:
+      db:
+        condition: service_healthy
+    volumes:
+      - .:/app
+
 volumes:
   pgdata:

@@ -1,0 +1,11 @@
+{# Pesan sekali tampil (flash). Pakai: {% include "components/flash.html" %} tepat setelah navbar. #}
+{% with messages = get_flashed_messages(with_categories=true) %}
+{% if messages %}
+<div class="mx-auto max-w-5xl px-4 pt-4 sm:px-5">
+  {% for cat, msg in messages %}
+  <p role="{{ 'alert' if cat == 'error' else 'status' }}"
+     class="mb-2 rounded-xl border px-4 py-3 text-sm font-medium {% if cat == 'error' %}border-red-200 bg-red-50 text-red-800{% elif cat == 'warning' %}border-amber-200 bg-amber-50 text-amber-900{% else %}border-emerald-200 bg-emerald-50 text-emerald-800{% endif %}">{{ msg }}</p>
+  {% endfor %}
+</div>
+{% endif %}
+{% endwith %}

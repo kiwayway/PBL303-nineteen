@@ -6,15 +6,15 @@
 <div class="mb-4 flex flex-wrap gap-2 text-sm">
   {% for key in ["submitted", "needs_revision", "approved", "rejected", "draft", "all"] %}
   <a href="{{ url_for('admin.seller_applications', status=key) }}"
-     class="rounded-full border px-4 py-1.5 font-medium {% if status == key %}border-brand bg-blue-50 text-brand{% else %}border-slate-200 bg-white text-slate-600 hover:bg-slate-50{% endif %}">
+     class="rounded-full border px-4 py-1.5 font-medium {% if status == key %}border-brand bg-blue-50 text-brand{% else %}border-brand/10 bg-white text-slate-600 hover:bg-slate-50{% endif %}">
     {{ labels.get(key, "Semua") }}{% if key != "all" %} <span class="text-xs text-slate-400">{{ counts.get(key, 0) }}</span>{% endif %}
   </a>
   {% endfor %}
 </div>
 
-<div class="overflow-x-auto rounded-2xl border bg-white shadow-sm">
+<div class="overflow-x-auto rounded-2xl border border-brand/10 bg-white shadow-sm shadow-blue-900/5 shadow-sm">
 <table class="w-full min-w-[640px] text-left text-sm">
-  <thead class="bg-slate-50 text-xs uppercase text-slate-500"><tr>
+  <thead class="bg-brand-soft/70 text-xs uppercase tracking-wide text-ink/60"><tr>
     <th class="p-4">Pelamar</th><th class="p-4">Status</th><th class="p-4">Dikirim</th><th class="p-4"></th></tr></thead>
   <tbody>
   {% for a in rows %}

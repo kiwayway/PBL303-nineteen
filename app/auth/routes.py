@@ -27,9 +27,12 @@ def csrf_token():
     return session["_csrf"]
 
 
+CSRF_EXEMPT_ENDPOINTS = {"finance.midtrans_notification"}  # diamankan lewat signature, bukan cookie
+
+
 @bp.before_app_request
 def _check_csrf():
-    if request.method == "POST":
+    if request.method == "POST" and request.endpoint not in CSRF_EXEMPT_ENDPOINTS:
         sent = request.form.get("_csrf", "")
         if not sent or not secrets.compare_digest(sent, session.get("_csrf", "")):
             abort(400, "Token CSRF tidak valid. Muat ulang halaman lalu coba lagi.")

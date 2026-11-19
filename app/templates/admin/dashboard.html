@@ -1,55 +1,95 @@
 {% extends "admin/base.html" %}
+{% from "admin/_ui.html" import icon, role_badge, status_badge %}
+{% set card = "rounded-2xl border border-brand/10 bg-white p-5 shadow-sm shadow-blue-900/5" %}
 {% block content %}
-<div class="mb-6">
-  <p class="text-sm font-medium text-brand">Overview</p>
-  <h1 class="mt-1 text-2xl font-bold text-slate-900">Dashboard Admin</h1>
-  <p class="mt-1 text-sm text-slate-500">Ringkasan aktivitas marketplace nineteen studios.</p>
-</div>
+
+<!-- BANNER SAMBUTAN -->
+<section class="relative mb-5 overflow-hidden rounded-3xl bg-gradient-to-br from-brand to-blue-400 p-6 text-white sm:p-8">
+  <span aria-hidden="true" class="absolute -right-6 -top-8 h-32 w-32 rounded-full bg-sun/90 sm:h-44 sm:w-44"></span>
+  <span aria-hidden="true" class="absolute bottom-3 right-1/3 h-6 w-6 rounded-full bg-white/30"></span>
+  <p class="relative text-sm font-semibold text-white/80">Halo, {{ admin.name }}!</p>
+  <h1 class="relative mt-1 text-2xl font-extrabold tracking-tight sm:text-3xl">Dashboard Admin</h1>
+  <p class="relative mt-1 max-w-md text-sm text-white/85">Ringkasan aktivitas marketplace nineteen studios.</p>
+  <div class="relative mt-5 flex flex-wrap gap-2">
+    <a href="{{ url_for('admin.seller_applications') }}" class="inline-flex items-center gap-2 rounded-xl bg-white px-4 py-2.5 text-sm font-bold text-brand transition hover:bg-brand-soft">
+      {{ icon('seller', 'h-4 w-4') }} Pengajuan seller
+      {% if pending_seller_apps %}<span class="rounded-full bg-sun px-2 py-0.5 text-[11px] font-extrabold text-ink">{{ pending_seller_apps }}</span>{% endif %}
+    </a>
+    <a href="{{ url_for('admin.orders') }}" class="inline-flex items-center gap-2 rounded-xl bg-white/15 px-4 py-2.5 text-sm font-bold text-white ring-1 ring-white/40 transition hover:bg-white/25">
+      {{ icon('orders', 'h-4 w-4') }} Pesanan
+      {% if stats.pending_orders %}<span class="rounded-full bg-sun px-2 py-0.5 text-[11px] font-extrabold text-ink">{{ stats.pending_orders }}</span>{% endif %}
+    </a>
+  </div>
+</section>
+
+<!-- KARTU STATISTIK -->
 <div class="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-  {% for label,value,sub in [
-    ('Total Pengguna',stats.users,stats.customers ~ ' customer'),
-    ('Total Seller',stats.sellers,stats.admins ~ ' admin'),
-    ('Total Jasa',stats.services,stats.active_services ~ ' jasa aktif'),
-    ('Total Pesanan',stats.orders,stats.pending_orders ~ ' menunggu proses')
+  {% for label, value, sub, ico, tone in [
+    ('Total Pengguna', stats.users, stats.customers ~ ' customer', 'users', 'bg-blue-50 text-brand'),
+    ('Total Seller', stats.sellers, stats.admins ~ ' admin', 'seller', 'bg-amber-50 text-amber-600'),
+    ('Total Jasa', stats.services, stats.active_services ~ ' jasa aktif', 'services', 'bg-violet-50 text-violet-600'),
+    ('Total Pesanan', stats.orders, stats.pending_orders ~ ' menunggu proses', 'orders', 'bg-emerald-50 text-emerald-600')
   ] %}
-  <section class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
-    <p class="text-sm text-slate-500">{{ label }}</p>
-    <p class="mt-2 text-3xl font-bold text-slate-900">{{ value }}</p>
-    <p class="mt-1 text-xs text-slate-400">{{ sub }}</p>
+  <section class="{{ card }}">
+    <div class="flex items-start justify-between">
+      <p class="text-sm font-medium text-ink/60">{{ label }}</p>
+      <span class="grid h-10 w-10 place-items-center rounded-xl {{ tone }}">{{ icon(ico) }}</span>
+    </div>
+    <p class="mt-2 text-3xl font-extrabold text-ink">{{ value }}</p>
+    <p class="mt-1 text-xs text-ink/50">{{ sub }}</p>
   </section>
   {% endfor %}
 </div>
+
 <div class="mt-4 grid gap-4 sm:grid-cols-2">
-  <section class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
-    <p class="text-sm text-slate-500">Transaksi disetujui</p>
-    <p class="mt-2 text-2xl font-bold text-slate-900">{{ stats.approved_orders }}</p>
-    <p class="mt-1 text-xs text-slate-400">Total nilai pesanan disetujui</p>
-    <p class="mt-2 text-xl font-semibold text-emerald-700">Rp{{ "{:,.0f}".format(stats.revenue).replace(",", ".") }}</p>
+  <section class="{{ card }}">
+    <div class="flex items-start justify-between">
+      <p class="text-sm font-medium text-ink/60">Transaksi disetujui</p>
+      <span class="grid h-10 w-10 place-items-center rounded-xl bg-emerald-50 text-emerald-600">{{ icon('money') }}</span>
+    </div>
+    <p class="mt-2 text-3xl font-extrabold text-ink">{{ stats.approved_orders }}</p>
+    <p class="mt-1 text-xs text-ink/50">Total nilai pesanan disetujui</p>
+    <p class="mt-2 text-xl font-extrabold text-emerald-700">Rp{{ "{:,.0f}".format(stats.revenue).replace(",", ".") }}</p>
   </section>
-  <section class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
-    <p class="text-sm text-slate-500">Ulasan pelanggan</p>
-    <p class="mt-2 text-2xl font-bold text-slate-900">{{ stats.reviews }}</p>
-    <p class="mt-1 text-xs text-slate-400">Jumlah ulasan yang tersimpan</p>
+  <section class="{{ card }}">
+    <div class="flex items-start justify-between">
+      <p class="text-sm font-medium text-ink/60">Ulasan pelanggan</p>
+      <span class="grid h-10 w-10 place-items-center rounded-xl bg-amber-50 text-amber-600">{{ icon('reviews') }}</span>
+    </div>
+    <p class="mt-2 text-3xl font-extrabold text-ink">{{ stats.reviews }}</p>
+    <p class="mt-1 text-xs text-ink/50">Jumlah ulasan yang tersimpan</p>
   </section>
 </div>
+
+<!-- DAFTAR TERBARU -->
 <div class="mt-6 grid gap-4 xl:grid-cols-2">
-  <section class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
-    <div class="mb-4 flex items-center justify-between"><h2 class="font-bold">Pengguna terbaru</h2><a class="text-sm font-semibold text-brand" href="{{ url_for('admin.users') }}">Semua pengguna →</a></div>
+  <section class="{{ card }}">
+    <div class="mb-3 flex items-center justify-between">
+      <h2 class="font-extrabold text-ink">Pengguna terbaru</h2>
+      <a class="text-sm font-semibold text-brand hover:underline" href="{{ url_for('admin.users') }}">Semua pengguna →</a>
+    </div>
     {% for u in recent_users %}
-    <div class="flex items-center justify-between border-t border-slate-100 py-3 text-sm">
-      <div><p class="font-semibold text-slate-800">{{ u.name }}</p><p class="text-xs text-slate-500">{{ u.email }}</p></div>
-      <span class="rounded-full bg-slate-100 px-2.5 py-1 text-xs">{{ u.role }}</span>
+    <div class="flex items-center justify-between gap-3 border-t border-brand/10 py-3 text-sm">
+      <div class="flex min-w-0 items-center gap-3">
+        <span class="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-brand-soft text-sm font-bold text-brand">{{ u.name[:1] | upper }}</span>
+        <div class="min-w-0"><p class="truncate font-semibold text-ink">{{ u.name }}</p><p class="truncate text-xs text-ink/50">{{ u.email }}</p></div>
+      </div>
+      {{ role_badge(u.role) }}
     </div>
-    {% else %}<p class="text-sm text-slate-500">Belum ada pengguna.</p>{% endfor %}
+    {% else %}<p class="text-sm text-ink/50">Belum ada pengguna.</p>{% endfor %}
   </section>
-  <section class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
-    <div class="mb-4 flex items-center justify-between"><h2 class="font-bold">Pesanan terbaru</h2><a class="text-sm font-semibold text-brand" href="{{ url_for('admin.orders') }}">Semua pesanan →</a></div>
-    {% for o in recent_orders %}
-    <div class="flex items-center justify-between border-t border-slate-100 py-3 text-sm">
-      <div><p class="font-semibold text-slate-800">Pesanan #{{ o.id }}</p><p class="text-xs text-slate-500">{{ o.customer.name if o.customer else 'Pengguna tidak tersedia' }}</p></div>
-      <div class="text-right"><p class="font-semibold">Rp{{ "{:,.0f}".format(o.total).replace(",", ".") }}</p><p class="text-xs text-slate-500">{{ o.status }}</p></div>
+
+  <section class="{{ card }}">
+    <div class="mb-3 flex items-center justify-between">
+      <h2 class="font-extrabold text-ink">Pesanan terbaru</h2>
+      <a class="text-sm font-semibold text-brand hover:underline" href="{{ url_for('admin.orders') }}">Semua pesanan →</a>
     </div>
-    {% else %}<p class="text-sm text-slate-500">Belum ada pesanan.</p>{% endfor %}
+    {% for o in recent_orders %}
+    <div class="flex items-center justify-between gap-3 border-t border-brand/10 py-3 text-sm">
+      <div class="min-w-0"><p class="font-semibold text-ink">Pesanan #{{ o.id }}</p><p class="truncate text-xs text-ink/50">{{ o.customer.name if o.customer else 'Pengguna tidak tersedia' }}</p></div>
+      <div class="text-right"><p class="font-bold text-ink">Rp{{ "{:,.0f}".format(o.total).replace(",", ".") }}</p>{{ status_badge(o.status) }}</div>
+    </div>
+    {% else %}<p class="text-sm text-ink/50">Belum ada pesanan.</p>{% endfor %}
   </section>
 </div>
 {% endblock %}

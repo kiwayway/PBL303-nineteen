@@ -77,6 +77,12 @@ def create_app(test_config=None):
         ),
         CONTACT_EMAIL=os.environ.get("CONTACT_EMAIL", "nineteenofficial3@gmail.com"),
         DATA_ENCRYPTION_KEY=os.environ.get("DATA_ENCRYPTION_KEY", ""),
+        MIDTRANS_SERVER_KEY=os.environ.get("MIDTRANS_SERVER_KEY", ""),
+        MIDTRANS_IS_PRODUCTION=os.environ.get("MIDTRANS_IS_PRODUCTION", "false").lower() == "true",
+        PUBLIC_BASE_URL=os.environ.get("PUBLIC_BASE_URL", "").rstrip("/"),
+        COMMISSION_BPS=int(os.environ.get("COMMISSION_BPS", "1000")),
+        HOLD_DAYS=int(os.environ.get("HOLD_DAYS", "3")),
+        AUTO_COMPLETE_DAYS=int(os.environ.get("AUTO_COMPLETE_DAYS", "3")),
         PAYMENT_BANK_NAME=os.environ.get("PAYMENT_BANK_NAME", ""),
         PAYMENT_BANK_ACCOUNT_NAME=os.environ.get("PAYMENT_BANK_ACCOUNT_NAME", ""),
         PAYMENT_BANK_ACCOUNT_NUMBER=os.environ.get("PAYMENT_BANK_ACCOUNT_NUMBER", ""),
@@ -98,6 +104,17 @@ def create_app(test_config=None):
 
     from . import models  # noqa: F401
     from .admin import bp as admin_bp
+    @app.context_processor
+    def _inject_globals():
+        """`user` dan `now_year` tersedia di semua template (navbar dan footer memerlukannya).
+
+        Nilai yang dikirim eksplisit lewat render_template(..., user=...) tetap diprioritaskan.
+        """
+        from datetime import datetime
+
+        from .auth.routes import current_user
+        return {"user": current_user(), "now_year": datetime.now().year}
+
     from .auth import bp as auth_bp
     from .auth.google import google_enabled
     from .auth.routes import csrf_token
@@ -106,6 +123,7 @@ def create_app(test_config=None):
     from .main import bp as main_bp
     from .profile import bp as profile_bp
     from .seller_apply import bp as seller_apply_bp
+    from .finance import bp as finance_bp
     from .sellers import bp as sellers_bp
 
     app.register_blueprint(main_bp)
@@ -115,6 +133,7 @@ def create_app(test_config=None):
     app.register_blueprint(commerce_bp)
     app.register_blueprint(profile_bp)
     app.register_blueprint(seller_apply_bp)
+    app.register_blueprint(finance_bp)
     app.register_blueprint(sellers_bp)
     app.jinja_env.globals["csrf_token"] = csrf_token
     app.jinja_env.globals["google_enabled"] = google_enabled
