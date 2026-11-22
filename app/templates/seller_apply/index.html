@@ -15,6 +15,12 @@
 <p class="mb-5 mt-1 text-sm text-slate-600">Lengkapi semua syarat, lalu ajukan ke admin. Setelah disetujui kamu bisa mengunggah jasa.</p>
 
 {# ---- Banner status ---- #}
+{% if underage %}
+<div class="mb-5 rounded-2xl border border-red-200 bg-red-50 p-5 text-red-900">
+  <p class="font-bold">Belum memenuhi syarat usia</p>
+  <p class="mt-1 text-sm">Seller harus berusia genap {{ min_age }} tahun. Tanggal lahirmu saat ini {{ user.birth_date | tgl }}. Kamu tetap bisa memakai akun sebagai customer. Kalau tanggal lahir salah, <a class="font-semibold underline" href="{{ url_for('profile.info') }}">perbaiki di Informasi Pribadi</a>.</p>
+</div>
+{% endif %}
 {% if is_seller %}
 <div class="mb-5 rounded-2xl border border-emerald-200 bg-emerald-50 p-5 text-emerald-900">
   <p class="font-bold">Selamat, kamu sudah menjadi seller!</p>

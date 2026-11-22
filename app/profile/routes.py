@@ -17,6 +17,8 @@ from ..models import (
 )
 from .avatar import delete_avatar, save_avatar
 
+from ..seller_apply.logic import MIN_SELLER_AGE, is_min_age
+
 bp = Blueprint("profile", __name__, url_prefix="/akun")
 
 USERNAME_RE = re.compile(r"[a-z0-9_.]{3,30}")
@@ -176,6 +178,8 @@ def info_save():
     birth_raw = f.get("birth_date", "").strip()
     gender = f.get("gender", "").strip()
     errors, birth = {}, None
+    app_status = user.seller_application.status if user.seller_application else None
+    needs_adult = user.role == "seller" or app_status in ("submitted", "approved")
 
     if not name:
         errors["name"] = "Nama lengkap tidak boleh kosong."
@@ -203,7 +207,17 @@ def info_save():
                 raise ValueError
         except ValueError:
             errors["birth_date"] = "Tanggal lahir tidak valid."
-    if gender and gender not in GENDERS:
+        else:
+            if needs_adult and not is_min_age(birth):
+                errors["birth_date"] = (
+                    f"Seller harus berusia minimal {MIN_SELLER_AGE} tahun (genap {MIN_SELLER_AGE} tahun)."
+                )
+    elif needs_adult:
+        errors["birth_date"] = "Tanggal lahir wajib diisi."
+
+    if not gender:
+        errors["gender"] = "Jenis kelamin wajib dipilih."
+    elif gender not in GENDERS:
         errors["gender"] = "Pilihan jenis kelamin tidak valid."
 
     if errors:
