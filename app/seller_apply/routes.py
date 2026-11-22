@@ -16,7 +16,10 @@ from ..extensions import db
 from ..models import (
     Category, Experience, PayoutAccount, Project, SellerApplication, utcnow,
 )
-from .logic import BANKS, EDITABLE_STATUSES, MIN_PLAN_CHARS, checklist, names_match, progress
+from .logic import (
+    BANKS, EDITABLE_STATUSES, MIN_PLAN_CHARS, MIN_SELLER_AGE, checklist, is_min_age,
+    names_match, progress,
+)
 
 bp = Blueprint("seller_apply", __name__, url_prefix="/akun/seller")
 
@@ -32,10 +35,15 @@ def _guard():
         return redirect(url_for("auth.login"))
     if user.role == "admin":
         abort(403)
-
+    if request.method == "POST" and _underage(user):
+        flash(f"Pengajuan seller hanya untuk usia minimal {MIN_SELLER_AGE} tahun (genap).", "error")
+        return redirect(url_for("seller_apply.index"))
 
 def _ip():
     return client_ip()
+
+def _underage(user):
+    return user.role == "customer" and bool(user.birth_date) and not is_min_age(user.birth_date)
 
 
 def _clean(value, limit):
@@ -75,6 +83,8 @@ def index():
         selected={c.id for c in app.categories} if app else set(),
         experiences=user.experiences, projects=user.projects,
         max_categories=MAX_CATEGORIES, min_plan=MIN_PLAN_CHARS,
+        underage=_underage(user), 
+        min_age=MIN_SELLER_AGE,
     )
 
 

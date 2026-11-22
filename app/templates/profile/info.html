@@ -40,7 +40,7 @@
       {{ field('phone', 'Nomor Telepon', v.get('phone', user.phone or ''), errors.phone, type='tel', extra='inputmode="tel" autocomplete="tel"') }}
       {{ field('birth_date', 'Tanggal Lahir (opsional)', v.get('birth_date', user.birth_date.isoformat() if user.birth_date else ''), errors.birth_date, type='date') }}
       <div>
-        <label for="gender" class="mb-1.5 block text-sm font-semibold text-slate-700">Jenis Kelamin (opsional)</label>
+        <label for="gender" class="mb-1.5 block text-sm font-semibold text-slate-700">Jenis Kelamin (Wajib)</label>
         {% set g = v.get('gender', user.gender or '') %}
         <select id="gender" name="gender" class="w-full rounded-xl border border-slate-300 bg-white px-3.5 py-3 text-sm focus:border-brand focus:outline-none focus:ring-2 focus:ring-brand/30">
           <option value="">Tidak ingin menyebutkan</option>
