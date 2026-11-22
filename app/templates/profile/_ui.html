@@ -20,7 +20,7 @@
 {% macro nav(active, user) %}
 {% set items = [
   ('profile.dashboard','dashboard','Dashboard'), ('profile.info','info','Informasi Pribadi'),
-  ('profile.orders','orders','Pesanan Saya'), ('profile.addresses','addresses','Alamat Saya'),
+  ('profile.orders','orders','Pesanan Saya'),
   ('profile.wishlist','wishlist','Wishlist / Favorit'), ('profile.reviews','reviews','Ulasan Saya'),
   ('profile.security','security','Keamanan Akun') ] %}
 {% if user and user.role == 'customer' %}{% set items = items + [('seller_apply.index','seller','Jadi Seller')] %}{% endif %}

@@ -91,17 +91,16 @@ def test_semua_halaman_butuh_login(app):
 
 def test_semua_halaman_render_dan_tanpa_menu_notifikasi(app):
     c = login(app, make_user(name="Nineteen"))
-    for path in ["/akun/", "/akun/profil", "/akun/profil?edit=1", "/akun/pesanan",
-                 "/akun/alamat", "/akun/alamat?baru=1", "/akun/wishlist", "/akun/ulasan",
-                 "/akun/keamanan"]:
+    for path in ["/akun/", "/akun/profil", "/akun/profil?edit=1", "/akun/profil?alamat_baru=1",
+                 "/akun/pesanan", "/akun/wishlist", "/akun/ulasan", "/akun/keamanan"]:
         r = c.get(path)
         assert r.status_code == 200, path
         assert b"Notifikasi" not in r.data
     html = c.get("/akun/").get_data(as_text=True)
-    for label in ["Dashboard", "Informasi Pribadi", "Pesanan Saya", "Alamat Saya",
+    for label in ["Dashboard", "Informasi Pribadi", "Pesanan Saya",
                   "Wishlist / Favorit", "Ulasan Saya", "Keamanan Akun", "Logout"]:
         assert label in html
-
+    assert 'href="/akun/alamat"' not in html  
 
 def test_post_tanpa_csrf_ditolak(app):
     c = login(app, make_user())
@@ -164,6 +163,12 @@ def test_edit_profil_validasi(app):
     r = post(c, "/akun/profil", {"name": "A", "username": "taken", "phone": other.phone})
     html = r.get_data(as_text=True)
     assert "Username sudah dipakai" in html and "sudah dipakai akun lain" in html
+
+def test_jenis_kelamin_wajib_diisi(app):
+    me = make_user()
+    r = post(login(app, me), "/akun/profil", {"name": "Budi", "phone": me.phone, "gender": ""})
+    assert r.status_code == 400 and "Jenis kelamin wajib dipilih" in r.get_data(as_text=True)
+    assert db.session.get(User, me.id).gender is None
 
 
 def test_email_tidak_bisa_diubah_lewat_profil(app):
@@ -237,13 +242,14 @@ def test_detail_pesanan_hanya_milik_sendiri(app):
 # ---------------------------------------------------------------- alamat
 ADDR = {"label": "Rumah", "recipient_name": "Budi", "phone": "0812-3456-7890",
         "full_address": "Jl. Raja Ali Haji No. 19, Batam Centre", "notes": "pagar biru"}
+ADDR_PAGE = "/akun/profil?alamat_baru=1"
 
 
 def test_alamat_pertama_otomatis_utama_dan_ganti_utama(app):
     me = make_user()
     c = login(app, me)
-    assert post(c, "/akun/alamat", ADDR, page="/akun/alamat?baru=1").status_code == 302
-    post(c, "/akun/alamat", dict(ADDR, label="Kantor"), page="/akun/alamat?baru=1")
+    assert post(c, "/akun/alamat", ADDR, page=ADDR_PAGE).status_code == 302
+    post(c, "/akun/alamat", dict(ADDR, label="Kantor"), page=ADDR_PAGE)
     a1, a2 = Address.query.order_by(Address.id).all()
     assert a1.is_primary and not a2.is_primary and a1.phone == "081234567890"
     post(c, f"/akun/alamat/{a2.id}/utama")
@@ -255,16 +261,17 @@ def test_alamat_pertama_otomatis_utama_dan_ganti_utama(app):
 def test_alamat_validasi_edit_dan_hapus(app):
     me = make_user()
     c = login(app, me)
-    r = post(c, "/akun/alamat", dict(ADDR, full_address="pendek", phone="1"), page="/akun/alamat?baru=1")
+    r = post(c, "/akun/alamat", dict(ADDR, full_address="pendek", phone="1"), page=ADDR_PAGE)
     assert r.status_code == 400 and Address.query.count() == 0
-    post(c, "/akun/alamat", ADDR, page="/akun/alamat?baru=1")
-    post(c, "/akun/alamat", dict(ADDR, label="Kantor"), page="/akun/alamat?baru=1")
+    assert "Alamat lengkap 10" in r.get_data(as_text=True)  # error tampil di halaman Informasi Pribadi
+    post(c, "/akun/alamat", ADDR, page=ADDR_PAGE)
+    post(c, "/akun/alamat", dict(ADDR, label="Kantor"), page=ADDR_PAGE)
     primary = Address.query.filter_by(is_primary=True).one()
     post(c, f"/akun/alamat/{primary.id}", dict(ADDR, recipient_name="Siti"))
     assert db.session.get(Address, primary.id).recipient_name == "Siti"
     r = post(c, f"/akun/alamat/{primary.id}/hapus")
     assert r.status_code == 302 and Address.query.count() == 1
-    html = c.get("/akun/alamat").get_data(as_text=True)
+    html = c.get("/akun/profil").get_data(as_text=True)
     assert "Pilih alamat utama" in html  # alamat utama dihapus -> harus pilih baru
 
 
@@ -275,12 +282,30 @@ def test_alamat_milik_orang_lain_tidak_bisa_diakses(app):
     db.session.add(a)
     db.session.commit()
     c = login(app, me)
-    assert c.get(f"/akun/alamat?edit={a.id}").status_code == 404
+    assert c.get(f"/akun/profil?alamat_edit={a.id}").status_code == 404
     assert post(c, f"/akun/alamat/{a.id}", ADDR).status_code == 404
     assert post(c, f"/akun/alamat/{a.id}/hapus").status_code == 404
     assert post(c, f"/akun/alamat/{a.id}/utama").status_code == 404
     assert Address.query.count() == 1
 
+
+def test_url_alamat_lama_diarahkan_ke_informasi_pribadi(app):
+    me = make_user()
+    c = login(app, me)
+    r = c.get("/akun/alamat")
+    assert r.status_code == 302 and r.location.endswith("/akun/profil#alamat")
+    r = c.get("/akun/alamat?baru=1")
+    assert r.status_code == 302 and "alamat_baru=1" in r.location
+    r = c.get("/akun/alamat?edit=5")
+    assert r.status_code == 302 and "alamat_edit=5" in r.location
+
+
+def test_alamat_tampil_di_halaman_informasi_pribadi(app):
+    me = make_user()
+    c = login(app, me)
+    post(c, "/akun/alamat", ADDR, page=ADDR_PAGE)
+    html = c.get("/akun/profil").get_data(as_text=True)
+    assert 'id="alamat"' in html and "Jl. Raja Ali Haji No. 19" in html
 
 # ---------------------------------------------------------------- wishlist
 def test_wishlist_tambah_hapus_dan_layanan_tidak_tersedia(app):
