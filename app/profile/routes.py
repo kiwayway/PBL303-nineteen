@@ -158,15 +158,32 @@ def dashboard():
 
 
 # ---------------------------------------------------------------- informasi pribadi
-def _info_page(form=None, errors=None, edit=False, status_code=200):
+def _info_page(form=None, errors=None, edit=False, status_code=200,
+               aform=None, aerrors=None, editing=None, adding=False):
+    user = current_user()
+    rows = Address.query.filter_by(user_id=user.id).order_by(
+        Address.is_primary.desc(), Address.id).all()
     return _page("profile/info.html", "info", "Informasi Pribadi", form=form or {},
-                 errors=errors or {}, edit=edit, genders=GENDERS, status_code=status_code)
+                 errors=errors or {}, edit=edit, genders=GENDERS,
+                 rows=rows, aform=aform or {}, aerrors=aerrors or {}, editing=editing,
+                 adding=adding, labels=ADDRESS_LABELS,
+                 has_primary=any(a.is_primary for a in rows),
+                 can_add=len(rows) < MAX_ADDRESSES, status_code=status_code)
 
 
 @bp.get("/profil")
 def info():
-    return _info_page(edit=request.args.get("edit") == "1")
-
+    user = current_user()
+    edit_id = request.args.get("alamat_edit", type=int)
+    if edit_id:
+        addr = _own_address(user, edit_id)
+        aform = {c: getattr(addr, c) or "" for c in
+                 ("label", "recipient_name", "phone", "full_address", "notes")}
+        aform["is_primary"] = addr.is_primary
+        return _info_page(aform=aform, editing=addr)
+    adding = request.args.get("alamat_baru") == "1"
+    aform = {"recipient_name": user.name, "phone": user.phone or ""} if adding else {}
+    return _info_page(edit=request.args.get("edit") == "1", adding=adding, aform=aform)
 
 @bp.post("/profil")
 def info_save():
@@ -316,6 +333,7 @@ def order_detail(order_id):
 
 
 # ---------------------------------------------------------------- alamat saya
+# ---------------------------------------------------------------- alamat (tampil di Informasi Pribadi)
 def _address_form(f):
     label = f.get("label", "").strip()
     recipient = " ".join(f.get("recipient_name", "").split())
@@ -337,31 +355,23 @@ def _address_form(f):
             "full_address": full, "notes": notes or None}, errors
 
 
-def _addresses_page(user, *, form=None, errors=None, editing=None, adding=False, status_code=200):
-    rows = Address.query.filter_by(user_id=user.id).order_by(
-        Address.is_primary.desc(), Address.id).all()
-    return _page("profile/addresses.html", "addresses", "Alamat Saya", rows=rows,
-                 form=form or {}, errors=errors or {}, editing=editing, adding=adding,
-                 labels=ADDRESS_LABELS, has_primary=any(a.is_primary for a in rows),
-                 can_add=len(rows) < MAX_ADDRESSES, status_code=status_code)
-
-
 def _own_address(user, address_id):
     return Address.query.filter_by(id=address_id, user_id=user.id).first_or_404()
 
 
+def _to_addresses():
+    return redirect(url_for("profile.info", _anchor="alamat"))
+
+
 @bp.get("/alamat")
 def addresses():
-    user = current_user()
+    """Alamat sudah pindah ke Informasi Pribadi; URL lama diarahkan ke sana."""
     edit_id = request.args.get("edit", type=int)
     if edit_id:
-        addr = _own_address(user, edit_id)
-        form = {c: getattr(addr, c) or "" for c in
-                ("label", "recipient_name", "phone", "full_address", "notes")}
-        form["is_primary"] = addr.is_primary
-        return _addresses_page(user, form=form, editing=addr)
-    return _addresses_page(user, form={"recipient_name": user.name, "phone": user.phone or ""},
-                           adding=request.args.get("baru") == "1")
+        return redirect(url_for("profile.info", alamat_edit=edit_id, _anchor="alamat"))
+    if request.args.get("baru") == "1":
+        return redirect(url_for("profile.info", alamat_baru=1, _anchor="alamat"))
+    return _to_addresses()
 
 
 @bp.post("/alamat")
@@ -369,11 +379,10 @@ def address_create():
     user = current_user()
     if Address.query.filter_by(user_id=user.id).count() >= MAX_ADDRESSES:
         flash(f"Maksimal {MAX_ADDRESSES} alamat tersimpan.", "error")
-        return redirect(url_for("profile.addresses"))
+        return _to_addresses()
     data, errors = _address_form(request.form)
     if errors:
-        return _addresses_page(user, form=request.form, errors=errors, adding=True,
-                               status_code=400)
+        return _info_page(aform=request.form, aerrors=errors, adding=True, status_code=400)
     first = Address.query.filter_by(user_id=user.id).count() == 0
     make_primary = first or bool(request.form.get("is_primary"))
     if make_primary:
@@ -383,7 +392,7 @@ def address_create():
     db.session.commit()
     audit("address_create", ip=_ip(), user_id=user.id, address_id=addr.id)
     flash("Alamat baru disimpan.", "success")
-    return redirect(url_for("profile.addresses"))
+    return _to_addresses()
 
 
 @bp.post("/alamat/<int:address_id>")
@@ -392,8 +401,7 @@ def address_update(address_id):
     addr = _own_address(user, address_id)
     data, errors = _address_form(request.form)
     if errors:
-        return _addresses_page(user, form=request.form, errors=errors, editing=addr,
-                               status_code=400)
+        return _info_page(aform=request.form, aerrors=errors, editing=addr, status_code=400)
     for key, value in data.items():
         setattr(addr, key, value)
     if request.form.get("is_primary") and not addr.is_primary:
@@ -402,7 +410,7 @@ def address_update(address_id):
     db.session.commit()
     audit("address_update", ip=_ip(), user_id=user.id, address_id=addr.id)
     flash("Alamat berhasil diperbarui.", "success")
-    return redirect(url_for("profile.addresses"))
+    return _to_addresses()
 
 
 @bp.post("/alamat/<int:address_id>/utama")
@@ -414,7 +422,7 @@ def address_primary(address_id):
     db.session.commit()
     audit("address_primary", ip=_ip(), user_id=user.id, address_id=addr.id)
     flash("Alamat utama diperbarui.", "success")
-    return redirect(url_for("profile.addresses"))
+    return _to_addresses()
 
 
 @bp.post("/alamat/<int:address_id>/hapus")
@@ -429,8 +437,7 @@ def address_delete(address_id):
         flash("Alamat dihapus. Pilih alamat utama yang baru.", "warning")
     else:
         flash("Alamat dihapus.", "success")
-    return redirect(url_for("profile.addresses"))
-
+    return _to_addresses()
 
 # ---------------------------------------------------------------- wishlist
 @bp.get("/wishlist")

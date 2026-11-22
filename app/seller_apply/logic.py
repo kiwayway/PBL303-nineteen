@@ -45,7 +45,7 @@ def checklist(user, application, payout):
         ("phone", "Nomor telepon", bool(user.phone), "Isi nomor telepon aktif.", info),
         ("birth", "Tanggal lahir (Minimal 18 tahun)", bool(user.birth_date), "Isi tanggal lahir. Minimal harus berusia 18 tahun.", info),
         ("gender", "Jenis kelamin", bool(user.gender), "Pilih jenis kelamin.", info),
-        ("address", "Alamat", len(user.addresses) >= 1, "Tambahkan minimal satu alamat.", url_for("profile.addresses")),
+                ("address", "Alamat", len(user.addresses) >= 1, "Tambahkan minimal satu alamat.", info + "#alamat"),
         ("payout", "Rekening pencairan",
          bool(payout and names_match(payout.account_holder, user.name)), payout_hint, "#rekening"),
         ("categories", "Kategori jasa yang ditawarkan",
