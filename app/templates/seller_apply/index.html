@@ -106,8 +106,9 @@
     <div>
       <label for="service_plan" class="mb-1.5 block text-sm font-semibold text-slate-700">Jelaskan jasa yang akan kamu tawarkan</label>
       <textarea id="service_plan" name="service_plan" rows="4" maxlength="1000" class="{{ input_cls }}"
+                data-min-words="{{ min_plan_words }}" data-counter="plan-count"
                 aria-describedby="plan-hint">{{ application.service_plan if application and application.service_plan else "" }}</textarea>
-      <p id="plan-hint" class="mt-1 text-xs text-slate-500">Minimal {{ min_plan }} karakter. Contoh: pembuatan website company profile, desain logo, dan sejenisnya.</p>
+      <p id="plan-hint" class="mt-1 text-xs text-slate-500">Minimal {{ min_plan_words }} kata. Contoh: pembuatan website company profile, desain logo, dan sejenisnya. <span id="plan-count" class="font-semibold"></span></p>
     </div>
     {{ btn("Simpan") }}
   </form>
@@ -176,7 +177,9 @@
     <div class="sm:col-span-2">{{ field("period", "Periode", "", none, "text", 'maxlength="60"', false, "Contoh: 2022 - 2024") }}</div>
     <div class="sm:col-span-2">
       <label for="exp_description" class="mb-1.5 block text-sm font-semibold text-slate-700">Deskripsi singkat</label>
-      <textarea id="exp_description" name="description" rows="3" maxlength="1000" class="{{ input_cls }}"></textarea>
+      <textarea id="project_description" name="description" rows="3" maxlength="1000" class="{{ input_cls }}"
+                data-min-words="{{ min_desc_words }}" data-counter="proj-count"></textarea>
+      <p class="mt-1 text-xs text-slate-500">Opsional. Jika diisi, minimal {{ min_desc_words }} kata. <span id="proj-count" class="font-semibold"></span></p>
     </div>
     <div class="sm:col-span-2">{{ btn("Tambah pengalaman") }}</div>
   </form>
@@ -221,4 +224,18 @@
   </form>
   {% endif %}
 </section>
+<script>
+  document.querySelectorAll('textarea[data-min-words]').forEach(function (t) {
+    var out = document.getElementById(t.dataset.counter);
+    var min = parseInt(t.dataset.minWords, 10);
+    function update() {
+      var v = t.value.trim();
+      var n = v ? v.split(/\s+/).length : 0;
+      out.textContent = '(' + n + ' kata)';
+      out.className = 'font-semibold ' + (n > 0 && n < min ? 'text-red-700' : 'text-emerald-700');
+    }
+    t.addEventListener('input', update);
+    update();
+  });
+</script>
 {% endblock %}

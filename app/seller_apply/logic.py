@@ -7,12 +7,16 @@ import re
 
 from datetime import date
 from flask import url_for
+from ..validators import count_words
 
 BANKS = (
     "BCA", "BRI", "BNI", "Mandiri", "BSI", "CIMB Niaga", "Permata", "Danamon",
     "BTN", "OCBC", "Jago", "SeaBank", "Neo Commerce", "Jenius (BTPN)",
 )
+
 MIN_PLAN_CHARS = 30
+MIN_PLAN_WORDS = 10
+MIN_DESC_WORDS = 5
 MIN_SELLER_AGE = 18
 EDITABLE_STATUSES = ("draft", "needs_revision", "rejected")
 
@@ -50,8 +54,8 @@ def checklist(user, application, payout):
          bool(payout and names_match(payout.account_holder, user.name)), payout_hint, "#rekening"),
         ("categories", "Kategori jasa yang ditawarkan",
          bool(application and application.categories), "Pilih minimal satu kategori.", "#kategori"),
-        ("plan", "Deskripsi jasa yang akan ditawarkan", len(plan) >= MIN_PLAN_CHARS,
-         f"Tulis minimal {MIN_PLAN_CHARS} karakter.", "#kategori"),
+        ("plan", "Deskripsi jasa yang akan ditawarkan", count_words(plan) >= MIN_PLAN_WORDS,
+         f"Tulis minimal {MIN_PLAN_WORDS} kata.", "#kategori"),
         ("track", "Pengalaman atau portofolio", len(user.experiences) + len(user.projects) >= 1,
          "Tambahkan minimal satu pengalaman atau proyek.", "#pengalaman"),
     ]
