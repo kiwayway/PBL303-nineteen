@@ -43,7 +43,7 @@
   <section class="rounded-2xl border border-brand/10 bg-white shadow-sm shadow-blue-900/5 p-5 shadow-sm">
     <h2 class="mb-3 font-bold">Pengalaman</h2>
     {% for e in applicant.experiences %}
-    <div class="mb-3 text-sm"><p class="font-semibold">{{ e.position }}</p><p class="text-slate-600">{{ e.institution }}{% if e.period %} · {{ e.period }}{% endif %}</p>
+    <div class="mb-3 text-sm"><p class="font-semibold">{{ e.institution }}{% if e.period_label %} · {{ e.period_label }}{% endif %}</p>
       {% if e.description %}<p class="whitespace-pre-line text-slate-600">{{ e.description }}</p>{% endif %}</div>
     {% else %}<p class="text-sm text-slate-500">Belum ada.</p>{% endfor %}
   </section>

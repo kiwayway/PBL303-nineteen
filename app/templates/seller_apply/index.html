@@ -155,7 +155,7 @@
     <li class="flex items-start justify-between gap-3 rounded-xl bg-slate-50 p-4">
       <div class="min-w-0">
         <p class="text-sm font-bold text-slate-900">{{ e.position }}</p>
-        <p class="text-sm text-slate-600">{{ e.institution }}{% if e.period %} · {{ e.period }}{% endif %}</p>
+        <p class="text-sm text-slate-600">{{ e.institution }}{% if e.period_label %} · {{ e.period_label }}{% endif %}</p>
         {% if e.description %}<p class="mt-1 whitespace-pre-line text-sm text-slate-600">{{ e.description }}</p>{% endif %}
       </div>
       {% if can_edit_items %}
@@ -174,7 +174,13 @@
     <input type="hidden" name="_csrf" value="{{ csrf_token() }}">
     {{ field("position", "Posisi", "", none, "text", 'required maxlength="120"') }}
     {{ field("institution", "Perusahaan / instansi", "", none, "text", 'required maxlength="120"') }}
-    <div class="sm:col-span-2">{{ field("period", "Periode", "", none, "text", 'maxlength="60"', false, "Contoh: 2022 - 2024") }}</div>
+        {{ field("start_date", "Tanggal masuk", "", none, "date", 'required min="1950-01-01"') }}
+    <div>
+      {{ field("end_date", "Tanggal resign / selesai", "", none, "date", 'min="1950-01-01" id="end_date"', false, "Kosongkan jika masih bekerja.") }}
+      <label class="mt-2 flex items-center gap-2 text-sm text-slate-700">
+        <input type="checkbox" name="is_current" value="1" id="is_current" class="h-4 w-4 rounded border-slate-300 text-brand focus:ring-brand"> Masih bekerja di sini
+      </label>
+    </div>
     <div class="sm:col-span-2">
       <label for="exp_description" class="mb-1.5 block text-sm font-semibold text-slate-700">Deskripsi singkat</label>
       <textarea id="project_description" name="description" rows="3" maxlength="1000" class="{{ input_cls }}"
@@ -237,5 +243,14 @@
     t.addEventListener('input', update);
     update();
   });
+
+    var cur = document.getElementById('is_current'), endEl = document.getElementById('end_date');
+  if (cur && endEl) {
+    var max = new Date().toISOString().slice(0, 10);
+    endEl.max = max;
+    var st = document.getElementById('start_date');
+    if (st) st.max = max;
+    cur.addEventListener('change', function () { endEl.disabled = cur.checked; if (cur.checked) endEl.value = ''; });
+  }
 </script>
 {% endblock %}

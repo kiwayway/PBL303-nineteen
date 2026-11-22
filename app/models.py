@@ -27,6 +27,7 @@ def _in(column, values):
     """Teks CHECK constraint: kolom IN ('a', 'b', ...)."""
     return "%s IN (%s)" % (column, ", ".join("'%s'" % v for v in values))
 
+_MONTHS_ID = ("Jan", "Feb", "Mar", "Apr", "Mei", "Jun", "Jul", "Agu", "Sep", "Okt", "Nov", "Des")
 
 class User(db.Model):
     __tablename__ = "users"
@@ -167,8 +168,22 @@ class Experience(db.Model):
     seller_id = db.Column(db.ForeignKey("users.id"), nullable=False, index=True)
     position = db.Column(db.String(120), nullable=False)
     institution = db.Column(db.String(120), nullable=False)
-    period = db.Column(db.String(60))
+    period = db.Column(db.String(60))  # teks lama; dipertahankan untuk data sebelum ada tanggal
+    start_date = db.Column(db.Date)
+    end_date = db.Column(db.Date)  # kosong + start_date terisi = masih bekerja
     description = db.Column(db.Text)
+
+    @property
+    def period_label(self):
+        """'Jan 2022 - Mar 2024' / 'Jan 2022 - Sekarang'; data lama memakai teks `period`."""
+        if self.start_date:
+            start = f"{_MONTHS_ID[self.start_date.month - 1]} {self.start_date.year}"
+            if self.end_date:
+                end = f"{_MONTHS_ID[self.end_date.month - 1]} {self.end_date.year}"
+            else:
+                end = "Sekarang"
+            return f"{start} - {end}"
+        return self.period
 
 
 class Certificate(db.Model):

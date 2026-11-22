@@ -5,7 +5,7 @@ kategori, pengalaman/portofolio), lalu mengajukan. Admin yang menyetujui; baru s
 `users.role` berubah jadi 'seller' (lihat app/admin/routes.py).
 """
 import re
-from datetime import datetime
+from datetime import date, datetime
 
 from flask import Blueprint, abort, flash, redirect, render_template, request, url_for
 
@@ -27,6 +27,17 @@ bp = Blueprint("seller_apply", __name__, url_prefix="/akun/seller")
 MAX_CATEGORIES = 5
 MAX_ITEMS = 20
 ACCOUNT_RE = re.compile(r"\d{5,20}")
+
+MIN_EXP_DATE = date(1950, 1, 1)
+
+
+def _parse_date(raw):
+    """'YYYY-MM-DD' dari input tanggal browser -> date, atau None bila kosong/tidak valid."""
+    try:
+        value = date.fromisoformat((raw or "").strip())
+    except ValueError:
+        return None
+    return value if value >= MIN_EXP_DATE else None
 
 
 @bp.before_request
@@ -156,8 +167,25 @@ def add_experience():
     position = _clean(request.form.get("position"), 120)
     institution = _clean(request.form.get("institution"), 120)
     description = (request.form.get("description") or "").strip()[:1000]
+    current = request.form.get("is_current") == "1"
+    start = _parse_date(request.form.get("start_date"))
+    end = None if current else _parse_date(request.form.get("end_date"))
+    today = date.today()
     if not position or not institution:
         return _back("Posisi dan nama instansi wajib diisi.", "error", "#pengalaman")
+    if start is None:
+        return _back("Tanggal mulai wajib diisi dengan tanggal yang valid.", "error", "#pengalaman")
+    if start > today:
+        return _back("Tanggal mulai tidak boleh di masa depan.", "error", "#pengalaman")
+    if not current:
+        if end is None:
+            return _back("Isi tanggal selesai, atau centang 'Masih bekerja di sini'.",
+                         "error", "#pengalaman")
+        if end < start:
+            return _back("Tanggal selesai tidak boleh lebih awal dari tanggal mulai.",
+                         "error", "#pengalaman")
+        if end > today:
+            return _back("Tanggal selesai tidak boleh di masa depan.", "error", "#pengalaman")
     if description and count_words(description) < MIN_DESC_WORDS:
         return _back(f"Deskripsi pengalaman minimal {MIN_DESC_WORDS} kata (kosongkan jika tidak diisi).",
                      "error", "#pengalaman")
@@ -165,7 +193,7 @@ def add_experience():
         return _back(f"Maksimal {MAX_ITEMS} pengalaman.", "error", "#pengalaman")
     db.session.add(Experience(
         seller_id=user.id, position=position, institution=institution,
-        period=_clean(request.form.get("period"), 60) or None,
+        start_date=start, end_date=end, period=None,
         description=description or None,
     ))
     db.session.commit()
