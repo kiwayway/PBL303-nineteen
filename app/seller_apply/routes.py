@@ -5,7 +5,7 @@ kategori, pengalaman/portofolio), lalu mengajukan. Admin yang menyetujui; baru s
 `users.role` berubah jadi 'seller' (lihat app/admin/routes.py).
 """
 import re
-from datetime import datetime
+from datetime import date, datetime
 
 from flask import Blueprint, abort, flash, redirect, render_template, request, url_for
 
@@ -16,9 +16,10 @@ from ..extensions import db
 from ..models import (
     Category, Experience, PayoutAccount, Project, SellerApplication, utcnow,
 )
+from ..validators import count_words
 from .logic import (
-    BANKS, EDITABLE_STATUSES, MIN_PLAN_CHARS, MIN_SELLER_AGE, checklist, is_min_age,
-    names_match, progress,
+    BANKS, EDITABLE_STATUSES, MIN_DESC_WORDS, MIN_PLAN_CHARS, MIN_PLAN_WORDS, MIN_SELLER_AGE,
+    checklist, is_min_age, names_match, progress,
 )
 
 bp = Blueprint("seller_apply", __name__, url_prefix="/akun/seller")
@@ -26,6 +27,17 @@ bp = Blueprint("seller_apply", __name__, url_prefix="/akun/seller")
 MAX_CATEGORIES = 5
 MAX_ITEMS = 20
 ACCOUNT_RE = re.compile(r"\d{5,20}")
+
+MIN_EXP_DATE = date(1950, 1, 1)
+
+
+def _parse_date(raw):
+    """'YYYY-MM-DD' dari input tanggal browser -> date, atau None bila kosong/tidak valid."""
+    try:
+        value = date.fromisoformat((raw or "").strip())
+    except ValueError:
+        return None
+    return value if value >= MIN_EXP_DATE else None
 
 
 @bp.before_request
@@ -83,8 +95,9 @@ def index():
         selected={c.id for c in app.categories} if app else set(),
         experiences=user.experiences, projects=user.projects,
         max_categories=MAX_CATEGORIES, min_plan=MIN_PLAN_CHARS,
-        underage=_underage(user), 
+        underage=_underage(user),
         min_age=MIN_SELLER_AGE,
+        min_plan_words=MIN_PLAN_WORDS, min_desc_words=MIN_DESC_WORDS,
     )
 
 
@@ -100,6 +113,10 @@ def save_categories():
         return _back(f"Pilih maksimal {MAX_CATEGORIES} kategori.", "error", "#kategori")
     if len(plan) > 1000:
         return _back("Deskripsi jasa maksimal 1000 karakter.", "error", "#kategori")
+    if plan and count_words(plan) < MIN_PLAN_WORDS:
+        return _back(
+            f"Deskripsi jasa minimal {MIN_PLAN_WORDS} kata (sekarang {count_words(plan)} kata).",
+            "error", "#kategori")
     app = user.seller_application
     if app is None:
         app = SellerApplication(user=user, status="draft")
@@ -149,14 +166,35 @@ def add_experience():
         return _back("Pengajuan sedang ditinjau admin dan tidak bisa diubah.", "error")
     position = _clean(request.form.get("position"), 120)
     institution = _clean(request.form.get("institution"), 120)
+    description = (request.form.get("description") or "").strip()[:1000]
+    current = request.form.get("is_current") == "1"
+    start = _parse_date(request.form.get("start_date"))
+    end = None if current else _parse_date(request.form.get("end_date"))
+    today = date.today()
     if not position or not institution:
         return _back("Posisi dan nama instansi wajib diisi.", "error", "#pengalaman")
+    if start is None:
+        return _back("Tanggal mulai wajib diisi dengan tanggal yang valid.", "error", "#pengalaman")
+    if start > today:
+        return _back("Tanggal mulai tidak boleh di masa depan.", "error", "#pengalaman")
+    if not current:
+        if end is None:
+            return _back("Isi tanggal selesai, atau centang 'Masih bekerja di sini'.",
+                         "error", "#pengalaman")
+        if end < start:
+            return _back("Tanggal selesai tidak boleh lebih awal dari tanggal mulai.",
+                         "error", "#pengalaman")
+        if end > today:
+            return _back("Tanggal selesai tidak boleh di masa depan.", "error", "#pengalaman")
+    if description and count_words(description) < MIN_DESC_WORDS:
+        return _back(f"Deskripsi pengalaman minimal {MIN_DESC_WORDS} kata (kosongkan jika tidak diisi).",
+                     "error", "#pengalaman")
     if len(user.experiences) >= MAX_ITEMS:
         return _back(f"Maksimal {MAX_ITEMS} pengalaman.", "error", "#pengalaman")
     db.session.add(Experience(
         seller_id=user.id, position=position, institution=institution,
-        period=_clean(request.form.get("period"), 60) or None,
-        description=(request.form.get("description") or "").strip()[:1000] or None,
+        start_date=start, end_date=end, period=None,
+        description=description or None,
     ))
     db.session.commit()
     audit("experience_add", ip=_ip(), user_id=user.id)
@@ -184,15 +222,19 @@ def add_project():
         return _back("Pengajuan sedang ditinjau admin dan tidak bisa diubah.", "error")
     title = _clean(request.form.get("title"), 160)
     link = (request.form.get("link") or "").strip()
+    description = (request.form.get("description") or "").strip()[:1000]
     if not title:
         return _back("Judul proyek wajib diisi.", "error", "#portofolio")
     if link and (len(link) > 255 or not link.lower().startswith(("http://", "https://"))):
         return _back("Tautan proyek harus diawali http:// atau https://.", "error", "#portofolio")
+    if description and count_words(description) < MIN_DESC_WORDS:
+        return _back(f"Deskripsi proyek minimal {MIN_DESC_WORDS} kata (kosongkan jika tidak diisi).",
+                     "error", "#portofolio")
     if len(user.projects) >= MAX_ITEMS:
         return _back(f"Maksimal {MAX_ITEMS} proyek.", "error", "#portofolio")
     db.session.add(Project(
         seller_id=user.id, title=title, link=link or None,
-        description=(request.form.get("description") or "").strip()[:1000] or None,
+        description=description or None,
         tech_stack=_clean(request.form.get("tech_stack"), 255) or None,
     ))
     db.session.commit()

@@ -106,8 +106,9 @@
     <div>
       <label for="service_plan" class="mb-1.5 block text-sm font-semibold text-slate-700">Jelaskan jasa yang akan kamu tawarkan</label>
       <textarea id="service_plan" name="service_plan" rows="4" maxlength="1000" class="{{ input_cls }}"
+                data-min-words="{{ min_plan_words }}" data-counter="plan-count"
                 aria-describedby="plan-hint">{{ application.service_plan if application and application.service_plan else "" }}</textarea>
-      <p id="plan-hint" class="mt-1 text-xs text-slate-500">Minimal {{ min_plan }} karakter. Contoh: pembuatan website company profile, desain logo, dan sejenisnya.</p>
+      <p id="plan-hint" class="mt-1 text-xs text-slate-500">Minimal {{ min_plan_words }} kata. Contoh: pembuatan website company profile, desain logo, dan sejenisnya. <span id="plan-count" class="font-semibold"></span></p>
     </div>
     {{ btn("Simpan") }}
   </form>
@@ -154,7 +155,7 @@
     <li class="flex items-start justify-between gap-3 rounded-xl bg-slate-50 p-4">
       <div class="min-w-0">
         <p class="text-sm font-bold text-slate-900">{{ e.position }}</p>
-        <p class="text-sm text-slate-600">{{ e.institution }}{% if e.period %} · {{ e.period }}{% endif %}</p>
+        <p class="text-sm text-slate-600">{{ e.institution }}{% if e.period_label %} · {{ e.period_label }}{% endif %}</p>
         {% if e.description %}<p class="mt-1 whitespace-pre-line text-sm text-slate-600">{{ e.description }}</p>{% endif %}
       </div>
       {% if can_edit_items %}
@@ -173,10 +174,18 @@
     <input type="hidden" name="_csrf" value="{{ csrf_token() }}">
     {{ field("position", "Posisi", "", none, "text", 'required maxlength="120"') }}
     {{ field("institution", "Perusahaan / instansi", "", none, "text", 'required maxlength="120"') }}
-    <div class="sm:col-span-2">{{ field("period", "Periode", "", none, "text", 'maxlength="60"', false, "Contoh: 2022 - 2024") }}</div>
+        {{ field("start_date", "Tanggal masuk", "", none, "date", 'required min="1950-01-01"') }}
+    <div>
+      {{ field("end_date", "Tanggal resign / selesai", "", none, "date", 'min="1950-01-01" id="end_date"', false, "Kosongkan jika masih bekerja.") }}
+      <label class="mt-2 flex items-center gap-2 text-sm text-slate-700">
+        <input type="checkbox" name="is_current" value="1" id="is_current" class="h-4 w-4 rounded border-slate-300 text-brand focus:ring-brand"> Masih bekerja di sini
+      </label>
+    </div>
     <div class="sm:col-span-2">
       <label for="exp_description" class="mb-1.5 block text-sm font-semibold text-slate-700">Deskripsi singkat</label>
-      <textarea id="exp_description" name="description" rows="3" maxlength="1000" class="{{ input_cls }}"></textarea>
+      <textarea id="project_description" name="description" rows="3" maxlength="1000" class="{{ input_cls }}"
+                data-min-words="{{ min_desc_words }}" data-counter="proj-count"></textarea>
+      <p class="mt-1 text-xs text-slate-500">Opsional. Jika diisi, minimal {{ min_desc_words }} kata. <span id="proj-count" class="font-semibold"></span></p>
     </div>
     <div class="sm:col-span-2">{{ btn("Tambah pengalaman") }}</div>
   </form>
@@ -221,4 +230,27 @@
   </form>
   {% endif %}
 </section>
+<script>
+  document.querySelectorAll('textarea[data-min-words]').forEach(function (t) {
+    var out = document.getElementById(t.dataset.counter);
+    var min = parseInt(t.dataset.minWords, 10);
+    function update() {
+      var v = t.value.trim();
+      var n = v ? v.split(/\s+/).length : 0;
+      out.textContent = '(' + n + ' kata)';
+      out.className = 'font-semibold ' + (n > 0 && n < min ? 'text-red-700' : 'text-emerald-700');
+    }
+    t.addEventListener('input', update);
+    update();
+  });
+
+    var cur = document.getElementById('is_current'), endEl = document.getElementById('end_date');
+  if (cur && endEl) {
+    var max = new Date().toISOString().slice(0, 10);
+    endEl.max = max;
+    var st = document.getElementById('start_date');
+    if (st) st.max = max;
+    cur.addEventListener('change', function () { endEl.disabled = cur.checked; if (cur.checked) endEl.value = ''; });
+  }
+</script>
 {% endblock %}

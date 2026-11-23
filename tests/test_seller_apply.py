@@ -10,6 +10,7 @@ from app.crypto import decrypt_text
 from app.extensions import db
 from app.models import Address, Category, Experience, PayoutAccount, Project, SellerApplication, User
 from app.seller_apply.logic import names_match
+from tests.test_auth import client
 
 
 @pytest.fixture
@@ -63,7 +64,8 @@ def fill_application(client, user):
                                            "account_holder": user.name.upper()})
     post(client, "/akun/seller/kategori", {"categories": [cat.id],
                                           "service_plan": "Saya membuat website company profile dan toko online untuk UMKM."})
-    post(client, "/akun/seller/pengalaman", {"position": "Developer", "institution": "Freelance"})
+    post(client, "/akun/seller/pengalaman", {"position": "Developer", "institution": "Freelance",
+                                         "start_date": "2022-01-01", "is_current": "1"})
 
 
 @pytest.fixture
@@ -144,7 +146,8 @@ def test_payout_validation(app, data, msg):
 def test_experience_and_project_crud_and_ownership(app):
     a, b = make_user(), make_user()
     ca = login(app, a)
-    post(ca, "/akun/seller/pengalaman", {"position": "Dev", "institution": "PT X"})
+    post(ca, "/akun/seller/pengalaman", {"position": "Dev", "institution": "PT X",
+                                         "start_date": "2022-01-01", "is_current": "1"})
     post(ca, "/akun/seller/portofolio", {"title": "Web Toko", "link": "https://contoh.id"})
     exp, proj = Experience.query.one(), Project.query.one()
     cb = login(app, b)
@@ -160,6 +163,19 @@ def test_project_rejects_unsafe_link(app):
     assert "http://" in r.get_data(as_text=True)
     assert Project.query.count() == 0
 
+def test_periode_pengalaman_validasi_tanggal(app):
+    from app.models import Experience
+    c = login(app, make_user())
+    base = {"position": "Dev", "institution": "PT X"}
+    post(c, "/akun/seller/pengalaman", base)
+    post(c, "/akun/seller/pengalaman", dict(base, start_date="2022-05-01"))
+    post(c, "/akun/seller/pengalaman", dict(base, start_date="2023-05-01", end_date="2022-01-01"))
+    post(c, "/akun/seller/pengalaman", dict(base, start_date="2999-01-01", is_current="1"))
+    assert Experience.query.count() == 0
+    post(c, "/akun/seller/pengalaman", dict(base, start_date="2022-01-10", end_date="2024-03-05"))
+    post(c, "/akun/seller/pengalaman", dict(base, start_date="2024-04-01", is_current="1"))
+    labels = sorted(e.period_label for e in Experience.query.all())
+    assert labels == ["Apr 2024 - Sekarang", "Jan 2022 - Mar 2024"]
 
 # ---------------------------------------------------------------- pengajuan
 def test_full_application_reaches_100_and_submits(app, ready):
@@ -180,8 +196,12 @@ def test_submitted_application_is_locked(app, ready):
                                                 "account_holder": "Dimas Pratama"}, follow_redirects=True)
     assert "tidak bisa diubah" in r.get_data(as_text=True)
     assert PayoutAccount.query.one().account_last4 == before
-    r = post(client, "/akun/seller/pengalaman", {"position": "X", "institution": "Y"}, follow_redirects=True)
+    r = post(client, "/akun/seller/pengalaman", {"position": "Developer", "institution": "Freelance",
+                                                 "start_date": "2022-01-01", "is_current": "1"},
+             follow_redirects=True)
     assert "tidak bisa diubah" in r.get_data(as_text=True)
+
+    
 
 
 # ---------------------------------------------------------------- admin

@@ -113,7 +113,7 @@
           <li class="relative">
             <span aria-hidden="true" class="absolute -left-[33px] top-1.5 h-3.5 w-3.5 rounded-full border-2 border-white bg-brand ring-2 ring-brand/30"></span>
             <h3 class="font-bold">{{ e.position }}</h3>
-            <p class="text-sm text-ink/70">{{ e.institution }}{% if e.period %} · {{ e.period }}{% endif %}</p>
+            <p class="text-sm text-ink/70">{{ e.institution }}{% if e.period_label %} · {{ e.period_label }}{% endif %}</p>
             {% if e.description %}<p class="mt-2 whitespace-pre-line text-sm leading-relaxed text-ink/70">{{ e.description }}</p>{% endif %}
           </li>
           {% endfor %}
